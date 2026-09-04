@@ -128,8 +128,14 @@ Panel {
     root.close()
   }
 
-  implicitWidth: cluster.implicitWidth
-  implicitHeight: cluster.implicitHeight
+  function triggerPress(button) {
+    if (button === Qt.RightButton) grok.launch()
+    else if (button === Qt.MiddleButton) grok.checkForUpdates()
+    else openTimer.restart()
+  }
+
+  implicitWidth: button.implicitWidth
+  implicitHeight: button.implicitHeight
 
   onOpenedChanged: if (opened) {
     cursorActive = false
@@ -168,79 +174,89 @@ Panel {
     function status(): string { return grok.statusText }
   }
 
-  Row {
-    id: cluster
-    spacing: Style.space(4)
-    height: Style.space(22)
-
-    Item {
-      width: Style.space(18)
-      height: Style.space(18)
-      anchors.verticalCenter: parent.verticalCenter
-
-      GrokBotIcon {
-        anchors.centerIn: parent
-        iconSize: Style.space(16)
-        color: root.barIconColor
-        running: grok.running || inbox.lively
-        alarming: grok.alarming || inbox.unreadBots > 0
-        installed: grok.installed || inbox.hasSnapshot
-        opacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
-      }
-
-      Rectangle {
-        visible: inbox.unreadBots > 0
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.rightMargin: -Style.space(4)
-        anchors.topMargin: -Style.space(3)
-        width: badgeText.implicitWidth + Style.space(6)
-        height: Style.space(12)
-        radius: height / 2
-        color: root.urgent
-
-        Text {
-          id: badgeText
-          anchors.centerIn: parent
-          textFormat: Text.PlainText
-          text: inbox.unreadBots > 99 ? "99" : String(inbox.unreadBots)
-          color: Color.background
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
-          font.bold: true
-        }
-      }
-    }
-
-    Repeater {
-      model: inbox.attentionBots
-      BotFace {
-        required property var modelData
-        anchors.verticalCenter: parent.verticalCenter
-        iconSize: Style.space(16)
-        color: modelData.color
-        shape: modelData.shape
-        lively: modelData.waiting || Number(modelData.unread || 0) > 0
-        holeColor: root.holeColor
-      }
-    }
+  Timer {
+    id: openTimer
+    interval: 40
+    repeat: false
+    onTriggered: root.toggle()
   }
 
-  MouseArea {
-    anchors.fill: cluster
-    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    onPressed: function(mouse) {
-      if (mouse.button === Qt.RightButton) grok.launch()
-      else if (mouse.button === Qt.MiddleButton) grok.checkForUpdates()
-      else root.toggle()
+  WidgetButton {
+    id: button
+    anchors.fill: parent
+    bar: root.bar
+    labelVisible: false
+    hasVisualContent: true
+    pressable: true
+    interactive: true
+    tooltipText: "Grok Bot"
+    active: grok.alarming || inbox.unreadBots > 0
+    fixedWidth: Math.max(Style.bar.iconSlot, cluster.implicitWidth + Style.space(10))
+    onPressed: function(buttonCode) { root.triggerPress(buttonCode) }
+
+    Row {
+      id: cluster
+      anchors.centerIn: parent
+      spacing: Style.space(4)
+      height: Style.space(22)
+
+      Item {
+        width: Style.space(18)
+        height: Style.space(18)
+        anchors.verticalCenter: parent.verticalCenter
+
+        GrokBotIcon {
+          anchors.centerIn: parent
+          iconSize: Style.space(16)
+          color: root.barIconColor
+          running: grok.running || inbox.lively
+          alarming: grok.alarming || inbox.unreadBots > 0
+          installed: grok.installed || inbox.hasSnapshot
+          opacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
+        }
+
+        Rectangle {
+          visible: inbox.unreadBots > 0
+          anchors.right: parent.right
+          anchors.top: parent.top
+          anchors.rightMargin: -Style.space(4)
+          anchors.topMargin: -Style.space(3)
+          width: badgeText.implicitWidth + Style.space(6)
+          height: Style.space(12)
+          radius: height / 2
+          color: root.urgent
+
+          Text {
+            id: badgeText
+            anchors.centerIn: parent
+            textFormat: Text.PlainText
+            text: inbox.unreadBots > 99 ? "99" : String(inbox.unreadBots)
+            color: Color.background
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+        }
+      }
+
+      Repeater {
+        model: inbox.attentionBots
+        BotFace {
+          required property var modelData
+          anchors.verticalCenter: parent.verticalCenter
+          iconSize: Style.space(16)
+          color: modelData.color
+          shape: modelData.shape
+          lively: modelData.waiting || Number(modelData.unread || 0) > 0
+          holeColor: root.holeColor
+        }
+      }
     }
   }
 
   KeyboardPanel {
     id: panel
-    anchorItem: cluster
+    anchorItem: button
     owner: root
     bar: root.bar
     open: root.opened
