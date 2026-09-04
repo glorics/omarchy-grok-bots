@@ -7,8 +7,10 @@ data = json.load(sys.stdin)
 for key in ("ok", "installed", "source", "statusText", "productUrl", "signedIn", "computerLabel"):
     assert key in data, key
 assert data.get("source") in ("official", "package", "path", "none"), data.get("source")
-print("status.py ok · installed=%s source=%s status=%s version=%s" % (
-    data.get("installed"), data.get("source"), data.get("statusText"), data.get("appVersion")))
+print("status.py ok · installed=%s source=%s status=%s version=%s update=%s" % (
+    data.get("installed"), data.get("source"), data.get("statusText"), data.get("appVersion"),
+    data.get("updateAvailable")))
+assert data.get("updateAvailable") in (True, False)
 '
 got=$(python3 -c 'print("A"*300000)' | wc -c)
 capped=$(set +o pipefail; GLORICS_MAX_BYTES=65536 bash "$root/bin/run-capped" python3 -c 'print("A"*300000)' 2>/dev/null | wc -c)

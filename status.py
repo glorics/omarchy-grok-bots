@@ -411,6 +411,17 @@ def write_json(path: Path, data: dict) -> None:
     atomic_write(path, json.dumps(data, indent=2) + "\n")
 
 
+def sentry_app_version() -> str:
+    """Last run version Grok Bot wrote to its own telemetry (not secrets)."""
+    data = read_json(CONFIG_DIR / "sentry" / "scope_v3.json")
+    event = data.get("event") if isinstance(data.get("event"), dict) else {}
+    contexts = event.get("contexts") if isinstance(event, dict) else {}
+    app = contexts.get("app") if isinstance(contexts, dict) else {}
+    if not isinstance(app, dict):
+        return ""
+    return strip_v(str(app.get("app_version") or ""))
+
+
 def strip_v(value: str) -> str:
     text = str(value or "").strip()
     if text.lower().startswith("v") and len(text) > 1 and text[1].isdigit():
@@ -796,7 +807,7 @@ def status() -> dict:
     launcher = which_grok_bot()
     pkg = package_version()
     installed_version = strip_v(state.get("tag") or "")
-    app_version = strip_v(str(marker.get("appVersion") or ""))
+    app_version = strip_v(str(marker.get("appVersion") or "")) or sentry_app_version()
     download_url = state.get("url") or OFFICIAL_APPIMAGE_URL
     state_source = state.get("source") or ""
     latest = strip_v(str(cache.get("tag") or ""))
