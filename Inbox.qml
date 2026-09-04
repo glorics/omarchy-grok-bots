@@ -6,23 +6,17 @@ Item {
   id: root
 
   property var settings: ({})
-  property url demoUrl: Qt.resolvedUrl("demo-roster.json")
 
   property var bots: []
   property bool demo: false
   property bool hasSnapshot: false
   property string lastError: ""
   property bool refreshing: false
+  property string sourcePath: ""
 
   readonly property int maxInboxBytes: 65536
   readonly property int maxBots: 24
-  readonly property bool useDemoRoster: boolSetting("useDemoRoster", true)
-
-  readonly property string homeDir: {
-    var home = Quickshell.env("HOME") || ""
-    return (home !== "" && home.charAt(0) === "/") ? home : ""
-  }
-  readonly property string snapshotPath: homeDir !== "" ? homeDir + "/.local/state/glorics-grok-bots/inbox.json" : ""
+  readonly property bool useDemoRoster: boolSetting("useDemoRoster", false)
 
   readonly property int botCount: bots.length
   readonly property int unreadCount: {
@@ -45,14 +39,28 @@ Item {
   }
   readonly property var attentionBots: {
     var out = []
-    for (var i = 0; i < bots.length && out.length < 3; i++) {
+    var ids = ""
+    function add(b) {
+      if (!b || !b.id || out.length >= 3)
+        return
+      if (ids.indexOf("|" + b.id + "|") >= 0)
+        return
+      ids += "|" + b.id + "|"
+      out.push(b)
+    }
+    for (var i = 0; i < bots.length; i++) {
       var b = bots[i]
       if (b && (b.waiting || Number(b.unread || 0) > 0 || b.busy))
-        out.push(b)
+        add(b)
     }
+    for (var j = 0; j < bots.length; j++)
+      add(bots[j])
     return out
   }
   readonly property bool lively: unreadCount > 0 || waitingCount > 0
+
+  property string _inboxOutput: ""
+  property string _inboxError: ""
 
   function setting(name, fallback) {
     var value = settings ? settings[name] : undefined
@@ -66,6 +74,14 @@ Item {
     if (value === false || value === "false" || value === 0 || value === "0")
       return false
     return fallback
+  }
+
+  function helperPath() {
+    return decodeURIComponent(Qt.resolvedUrl("inbox.py").toString().replace(/^file:\/\//, ""))
+  }
+
+  function capPath() {
+    return decodeURIComponent(Qt.resolvedUrl("bin/run-capped").toString().replace(/^file:\/\//, ""))
   }
 
   function clip(s, n) {
@@ -161,7 +177,7 @@ Item {
     try {
       var data = JSON.parse(text)
       if (!data || data.ok !== true || data.client !== "glorics.grok-bots") {
-        root.lastError = "Not a Grok Bots inbox snapshot"
+        root.lastError = root.clip(data && data.error ? data.error : "Could not read inbox", 80)
         root.hasSnapshot = false
         root.bots = []
         root.demo = false
@@ -170,7 +186,12 @@ Item {
       root.bots = root.sanitizeBots(data.bots)
       root.demo = fromDemo === true || data.demo === true
       root.hasSnapshot = true
-      root.lastError = ""
+      root.lastError = root.clip(data.error || "", 80)
+      var nextPath = String(data.sourcePath || "")
+      if (nextPath.indexOf("/home/") === 0 && nextPath.indexOf("..") < 0)
+        root.sourcePath = nextPath
+      else if (nextPath === "")
+        root.sourcePath = ""
     } catch (e) {
       root.lastError = "Could not read inbox"
       root.hasSnapshot = false
@@ -180,11 +201,13 @@ Item {
   }
 
   function refresh() {
+    if (inboxProcess.running)
+      return
     root.refreshing = true
-    if (snapshotFile.path !== "")
-      snapshotFile.reload()
-    else
-      loadDemo()
+    root._inboxOutput = ""
+    root._inboxError = ""
+    inboxProcess.command = ["bash", capPath(), "python3", helperPath()]
+    inboxProcess.running = true
   }
 
   function loadDemo() {
@@ -199,20 +222,45 @@ Item {
     demoFile.reload()
   }
 
+  Process {
+    id: inboxProcess
+    running: false
+    command: []
+    stdout: StdioCollector { id: inboxStdout; waitForEnd: true; onStreamFinished: root._inboxOutput = text }
+    stderr: StdioCollector { id: inboxStderr; waitForEnd: true; onStreamFinished: root._inboxError = text }
+    onExited: function(exitCode) {
+      var stdout = String(inboxStdout.text || root._inboxOutput || "")
+      var stderr = String(inboxStderr.text || root._inboxError || "")
+      if (exitCode === 0 && stdout.trim() !== "") {
+        root.applyInbox(stdout, false)
+        if (root.bots.length === 0 && root.useDemoRoster)
+          root.loadDemo()
+      } else {
+        root.refreshing = false
+        if (root.useDemoRoster)
+          root.loadDemo()
+        else {
+          root.lastError = root.clip(stderr || "Could not read Grok Bot roster", 80)
+          root.hasSnapshot = false
+          root.bots = []
+          root.demo = false
+        }
+      }
+    }
+  }
+
   FileView {
-    id: snapshotFile
-    path: root.snapshotPath
+    id: sourceFile
+    path: root.sourcePath
     watchChanges: true
     printErrors: false
-    onLoaded: root.applyInbox(text(), false)
-    onFileChanged: snapshotFile.reload()
-    onLoadFailed: root.loadDemo()
+    onFileChanged: root.refresh()
   }
 
   FileView {
     id: demoFile
     path: {
-      var u = String(root.demoUrl)
+      var u = String(Qt.resolvedUrl("demo-roster.json"))
       return u.indexOf("file://") === 0 ? decodeURIComponent(u.substring(7)) : ""
     }
     printErrors: false
@@ -226,5 +274,11 @@ Item {
     }
   }
 
-  Component.onCompleted: refresh()
+  Timer {
+    interval: 5000
+    running: true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.refresh()
+  }
 }

@@ -93,6 +93,21 @@ ids = [b["id"] for b in bots]
 assert len(set(ids)) == 14
 print("demo roster ok · 14 bots · 1 waiting · 4 unread")
 PY
+python3 "$root/inbox.py" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+assert data.get("ok") is True
+assert data.get("client") == "glorics.grok-bots"
+assert data.get("demo") is False
+bots = data.get("bots") or []
+assert len(bots) <= 24
+for bot in bots:
+    assert bot.get("id")
+    assert bot.get("name")
+    assert str(bot.get("color","")).startswith("#")
+print("inbox.py ok · bots=%d source=%s" % (len(bots), "yes" if data.get("sourcePath") else "none"))
+'
+
 
 if command -v omarchy >/dev/null; then
   omarchy plugin validate "$root"

@@ -20,7 +20,7 @@
     "defaultSection": "right",
     "defaults": {
       "refreshIntervalSec": 15,
-      "useDemoRoster": true
+      "useDemoRoster": false
     },
     "schema": [
       {
@@ -35,8 +35,8 @@
       {
         "key": "useDemoRoster",
         "type": "boolean",
-        "label": "Show bundled demo roster when no inbox snapshot is present",
-        "defaultValue": true
+        "label": "Show bundled demo roster when no live Grok Bot roster is present",
+        "defaultValue": false
       }
     ]
   }

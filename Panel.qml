@@ -362,7 +362,7 @@ Panel {
             width: parent.width
             text: inbox.demo
               ? "GROK BOT · demo roster"
-              : (inbox.hasSnapshot ? "GROK BOT · inbox" : "GROK BOT")
+              : (inbox.botCount > 0 ? "GROK BOT · inbox" : "GROK BOT")
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -510,7 +510,9 @@ Panel {
             textFormat: Text.PlainText
             text: inbox.lastError !== ""
               ? inbox.lastError
-              : "No bots yet. Drop a snapshot at ~/.local/state/glorics-grok-bots/inbox.json, or keep the demo roster on."
+              : (grok.installed
+                ? "No bots yet. Open Grok Bot and sign in. This widget reads the client's local roster."
+                : "Install the Grok Bot Linux AppImage, then this widget can show your bots.")
           }
 
           Column {

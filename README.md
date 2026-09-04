@@ -14,7 +14,7 @@ This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It 
 - Shows whether the window is open
 - Can check Cursor's update feed and, when you click **Update now**, install a Linux AppImage whose URL, size, and SHA-256 are pinned in this snapshot
 
-It does not read Grok Bot tokens, chats, cookies, or Electron files under `~/.config/Grok Bot`. Live inbox rows come only from a snapshot you own at `~/.local/state/glorics-grok-bots/inbox.json`. Until that file exists, the bundled **demo roster** is shown and labeled as demo.
+It does not read Grok Bot tokens, cookies, `sand-secrets.json`, or transcript blobs. Live inbox rows come from the official client's **last-roster** slice under `~/.config/Grok Bot/sand-client-persistence` (names, last-message preview, unread, waiting-on-you). Click a row to open or focus the Linux client. A bundled demo roster exists but is off by default.
 
 ## External dependency
 
@@ -36,32 +36,11 @@ omarchy plugin remove glorics.grok-bots
 
 Leave `glorics.grok-bot` installed if you still want the listed launcher.
 
-## Inbox snapshot
+## Inbox
 
-Optional. JSON, max 64 KiB, at most 24 bots. `client` must be `glorics.grok-bots`.
+The widget re-reads the official client's last-roster file about every five seconds, and again when that file changes. At most 24 bots. Previews are clipped. Transcript blobs are not opened.
 
-```json
-{
-  "ok": true,
-  "client": "glorics.grok-bots",
-  "demo": false,
-  "bots": [
-    {
-      "id": "chief-of-staff",
-      "name": "Chief of Staff",
-      "team": "Operations",
-      "preview": "Your Thursday is triple-booked.",
-      "when": "35m",
-      "unread": 0,
-      "waiting": true,
-      "shape": "square",
-      "color": "#e23d3d"
-    }
-  ]
-}
-```
-
-Turn off **Show bundled demo roster** in plugin settings if you want an empty inbox instead of the demo.
+Turn on **Show bundled demo roster** in plugin settings only if you want the fake 14-bot layout.
 
 ## License
 
