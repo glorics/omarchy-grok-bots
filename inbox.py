@@ -18,7 +18,12 @@ from pathlib import Path
 
 HOME = Path.home()
 CONFIG_DIR = HOME / ".config" / "Grok Bot"
-PERSIST_DIR = CONFIG_DIR / "sand-client-persistence"
+PERSIST_DIR = Path(
+    os.environ.get(
+        "GROKBOT_PERSIST",
+        str(CONFIG_DIR / "sand-client-persistence"),
+    )
+)
 MAX_FILE_BYTES = 64 * 1024
 MAX_STDOUT_BYTES = 256 * 1024
 MAX_BOTS = 24
@@ -254,6 +259,34 @@ def relative_time(ms) -> str:
     return f"{days // 7}w"
 
 
+def unread_and_waiting(row: dict) -> tuple[int, bool]:
+    """Same rule Grok Bot uses for the dock badge, plus a timestamp fallback."""
+    try:
+        n = int(row.get("unreadCount") or 0)
+    except (TypeError, ValueError):
+        n = 0
+    if row.get("hasUnread") is True:
+        n = max(n, 1)
+    try:
+        activity = int(row.get("lastActivityAt") or 0)
+        viewed = int(row.get("lastViewedAt") or 0)
+    except (TypeError, ValueError):
+        activity, viewed = 0, 0
+    if activity > viewed:
+        n = max(n, 1)
+    if n < 0:
+        n = 0
+    if n > 99:
+        n = 99
+    waiting = waiting_flag(row.get("awaitingUserResponse"))
+    entry = row.get("lastEntry")
+    if isinstance(entry, dict):
+        preview = entry.get("sessionPreview")
+        if isinstance(preview, dict) and preview.get("kind") == "widget_options":
+            waiting = True
+    return n, waiting
+
+
 def waiting_flag(value) -> bool:
     if value is True:
         return True
@@ -305,17 +338,7 @@ def sanitize_row(row: dict) -> dict | None:
         ok = ch.isalnum() or ch in "._-:"
         if not ok:
             return None
-    unread = row.get("unreadCount")
-    if row.get("hasUnread") is True and not unread:
-        unread = 1
-    try:
-        unread_n = int(unread or 0)
-    except (TypeError, ValueError):
-        unread_n = 0
-    if unread_n < 0:
-        unread_n = 0
-    if unread_n > 99:
-        unread_n = 99
+    unread_n, waiting = unread_and_waiting(row)
     activity_ms = row.get("lastActivityAt") or row.get("updatedAt") or 0
     return {
         "id": ident,
@@ -324,7 +347,7 @@ def sanitize_row(row: dict) -> dict | None:
         "preview": preview_text(row),
         "when": relative_time(activity_ms),
         "unread": unread_n,
-        "waiting": waiting_flag(row.get("awaitingUserResponse")),
+        "waiting": waiting,
         "busy": False,
         "activity": "",
         "shape": resolve_shape(row, ident),

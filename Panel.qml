@@ -172,6 +172,14 @@ Panel {
     function launch(): string { grok.launch(); return "ok" }
     function update(): string { grok.updateNow(); return "ok" }
     function status(): string { return grok.statusText }
+    function unread(): string {
+      var parts = []
+      for (var i = 0; i < inbox.bots.length; i++) {
+        var b = inbox.bots[i]
+        parts.push(String(b.name || "Bot") + ":" + String(b.unread || 0))
+      }
+      return String(inbox.unreadCount) + " " + parts.join(" ")
+    }
   }
 
   Timer {
