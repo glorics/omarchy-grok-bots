@@ -1,51 +1,67 @@
-# Grok Bot for Omarchy
+# Grok Bots for Omarchy
 
-[![Release](https://img.shields.io/github/v/release/glorics/omarchy-grok-bot)](https://github.com/glorics/omarchy-grok-bot/releases/latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Unofficial community bar roster by **glorics**. It puts Grok Bot on the Omarchy bar the way a messenger does: a cluster of faces, unread counts, who is waiting on you, and one click into the [Grok Bot](https://x.ai/bot) Linux client.
 
-Unofficial community bar widget by **glorics**. It launches the [Grok Bot](https://x.ai/bot) Linux client from the Omarchy bar: themed face, one click to open, **Connected** or **Window closed**.
-
-This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product.
-
-<p align="center">
-  <video src="docs/widget-demo.mp4" width="400" controls muted loop playsinline></video>
-  <video src="docs/widget-demo-open.mp4" width="400" controls muted loop playsinline></video>
-</p>
-
-<p align="center">
-  <img src="preview.png" alt="Grok Bot community widget on Omarchy" width="360">
-</p>
+This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It is a new project next to the listed launcher [`glorics.grok-bot`](https://plugins.omarchy.org/plugin.html?id=glorics.grok-bot). It does not replace that listing.
 
 ## What it does
 
-- Puts a themed x.ai/bot face on the Omarchy bar
-- Opens or focuses the Grok Bot Linux client
+- Themed x.ai/bot face on the bar, plus colored faces for bots that need you
+- Unread badge on the hub
+- Inbox panel: name, team, last preview, relative time, unread count
+- Highlight for **waiting on you**
+- Opens or focuses the Grok Bot Linux AppImage
 - Shows whether the window is open
-- Can check Cursor's update feed and, when you click **Update now**, install a Linux AppImage whose URL, size, and SHA-256 are pinned in this snapshot. There is no automatic download. A newer Cursor build that is not pinned here fails closed.
+- Can check Cursor's update feed and, when you click **Update now**, install a Linux AppImage whose URL, size, and SHA-256 are pinned in this snapshot
 
-It does not read Grok Bot tokens, chats, or secret files. Helper stdout and stderr are capped before QML collects them. Plugin state under `~/.grokbot` is mode 0700 and written atomically. Status strings render as plain text.
+It does not read Grok Bot tokens, chats, cookies, or Electron files under `~/.config/Grok Bot`. Live inbox rows come only from a snapshot you own at `~/.local/state/glorics-grok-bots/inbox.json`. Until that file exists, the bundled **demo roster** is shown and labeled as demo.
 
 ## External dependency
 
 The [Grok Bot Linux client](https://x.ai/bot) (AppImage). Install it yourself, or use **Update now** in the panel for the pinned Cursor CDN artifact. Removing the plugin does not remove the AppImage.
 
-This widget needs that client on disk, so marketplace listing is **manual-setup**.
-
 ## Install
 
 Plugins run unsandboxed inside `omarchy-shell`. Read this repository first.
 
+From this tree:
+
 ```bash
-omarchy plugin add https://github.com/glorics/omarchy-grok-bot.git --enable
+omarchy plugin add /home/manny/src/omarchy-grok-bots --enable
 ```
 
 ```bash
-omarchy plugin remove glorics.grok-bot
+omarchy plugin remove glorics.grok-bots
 ```
 
-## Marketplace
+Leave `glorics.grok-bot` installed if you still want the listed launcher.
 
-Candidate listing: [omacom/omarchy-plugin-marketplace#3539](https://github.com/omacom/omarchy-plugin-marketplace/issues/3539).
+## Inbox snapshot
+
+Optional. JSON, max 64 KiB, at most 24 bots. `client` must be `glorics.grok-bots`.
+
+```json
+{
+  "ok": true,
+  "client": "glorics.grok-bots",
+  "demo": false,
+  "bots": [
+    {
+      "id": "chief-of-staff",
+      "name": "Chief of Staff",
+      "team": "Operations",
+      "preview": "Your Thursday is triple-booked.",
+      "when": "35m",
+      "unread": 0,
+      "waiting": true,
+      "shape": "square",
+      "color": "#e23d3d"
+    }
+  ]
+}
+```
+
+Turn off **Show bundled demo roster** in plugin settings if you want an empty inbox instead of the demo.
 
 ## License
 

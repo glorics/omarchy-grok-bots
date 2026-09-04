@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -7,16 +8,14 @@ import qs.Ui
 
 Panel {
   id: root
-  moduleName: "glorics.grok-bot"
-  ipcTarget: "glorics.grok-bot"
+  moduleName: "glorics.grok-bots"
+  ipcTarget: "glorics.grok-bots"
   manageIpc: false
 
   property int actionIndex: 0
   property bool cursorActive: false
   property int phraseIndex: 0
-  // Hero lines are product facts, not telemetry. This widget only knows
-  // whether the Linux client window is open. Bots still run on the cloud
-  // computer when the window is closed.
+  property int selectedBot: 0
   readonly property var livePhrases: [
     "Cloud computer",
     "Remote control",
@@ -37,7 +36,8 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property color iconColor: grok.crashed || grok.updateAvailable ? urgent : foreground
   readonly property color barIconColor: grok.alarming ? (bar ? bar.urgent : urgent) : (bar ? bar.barForeground : foreground)
-
+  readonly property color holeColor: bar ? (bar.background || Color.bar.background) : Color.background
+  readonly property int rowH: Style.space(58)
   readonly property var actions: buildActions()
   readonly property var selectedAction: actions.length > 0 ? actions[Math.max(0, Math.min(actionIndex, actions.length - 1))] : null
 
@@ -90,6 +90,10 @@ Panel {
   }
 
   function activateCursor() {
+    if (inbox.bots.length > 0 && selectedBot >= 0 && selectedBot < inbox.bots.length) {
+      openBot(inbox.bots[selectedBot])
+      return
+    }
     if (!selectedAction) return
     selectedAction.run()
   }
@@ -104,6 +108,7 @@ Panel {
     if (grok.updating) return "Updating"
     if (grok.crashed) return "Client crashed"
     if (grok.updateAvailable) return "Update available"
+    if (inbox.demo) return "demo roster"
     var phrases = phraseList()
     if (phrases.length > 0)
       return phrases[phraseIndex % phrases.length]
@@ -111,19 +116,29 @@ Panel {
   }
 
   function heroDetail() {
-    var version = grok.appVersion || grok.installedVersion
-    return version !== "" ? version : ""
+    var parts = []
+    parts.push(inbox.botCount + " bots")
+    parts.push(inbox.waitingCount + " waiting on you")
+    parts.push(inbox.unreadBots + " unread")
+    return parts.join(" · ")
   }
 
-  implicitWidth: button.implicitWidth
-  implicitHeight: button.implicitHeight
+  function openBot(bot) {
+    grok.launch()
+    root.close()
+  }
+
+  implicitWidth: cluster.implicitWidth
+  implicitHeight: cluster.implicitHeight
 
   onOpenedChanged: if (opened) {
     cursorActive = false
     actionIndex = 0
     phraseIndex = 0
+    selectedBot = 0
     if (panelFlick) panelFlick.contentY = 0
     grok.refresh(false)
+    inbox.refresh()
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
   onActionsChanged: if (actionIndex >= actions.length) actionIndex = Math.max(0, actions.length - 1)
@@ -131,7 +146,13 @@ Panel {
   Service {
     id: grok
     settings: root.settings
+    githubUrl: ""
     onRunningChanged: root.phraseIndex = 0
+  }
+
+  Inbox {
+    id: inbox
+    settings: root.settings
   }
 
   IpcHandler {
@@ -141,46 +162,91 @@ Panel {
     function show(): void { root.open() }
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }
-    function refresh(): string { grok.refresh(false); return "ok" }
+    function refresh(): string { grok.refresh(false); inbox.refresh(); return "ok" }
     function launch(): string { grok.launch(); return "ok" }
     function update(): string { grok.updateNow(); return "ok" }
     function status(): string { return grok.statusText }
   }
 
-  BarIconButton {
-    id: button
-    anchors.fill: parent
-    bar: root.bar
-    active: grok.alarming
-    iconComponent: Component {
-      Item {
-        GrokBotIcon {
+  Row {
+    id: cluster
+    spacing: Style.space(4)
+    height: Style.space(22)
+
+    Item {
+      width: Style.space(18)
+      height: Style.space(18)
+      anchors.verticalCenter: parent.verticalCenter
+
+      GrokBotIcon {
+        anchors.centerIn: parent
+        iconSize: Style.space(16)
+        color: root.barIconColor
+        running: grok.running || inbox.lively
+        alarming: grok.alarming || inbox.unreadBots > 0
+        installed: grok.installed || inbox.hasSnapshot
+        opacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
+      }
+
+      Rectangle {
+        visible: inbox.unreadBots > 0
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.rightMargin: -Style.space(4)
+        anchors.topMargin: -Style.space(3)
+        width: badgeText.implicitWidth + Style.space(6)
+        height: Style.space(12)
+        radius: height / 2
+        color: root.urgent
+
+        Text {
+          id: badgeText
           anchors.centerIn: parent
-          iconSize: Style.space(14)
-          color: root.barIconColor
-          running: grok.running
-          alarming: grok.alarming
-          installed: grok.installed
-          opacity: grok.installed ? 1.0 : 0.55
+          textFormat: Text.PlainText
+          text: inbox.unreadBots > 99 ? "99" : String(inbox.unreadBots)
+          color: Color.background
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          font.bold: true
         }
       }
     }
-    onPressed: function(buttonCode) {
-      if (buttonCode === Qt.RightButton) grok.launch()
-      else if (buttonCode === Qt.MiddleButton) grok.checkForUpdates()
+
+    Repeater {
+      model: inbox.attentionBots
+      BotFace {
+        required property var modelData
+        anchors.verticalCenter: parent.verticalCenter
+        iconSize: Style.space(16)
+        color: modelData.color
+        shape: modelData.shape
+        lively: modelData.waiting || Number(modelData.unread || 0) > 0
+        holeColor: root.holeColor
+      }
+    }
+  }
+
+  MouseArea {
+    anchors.fill: cluster
+    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    onPressed: function(mouse) {
+      if (mouse.button === Qt.RightButton) grok.launch()
+      else if (mouse.button === Qt.MiddleButton) grok.checkForUpdates()
       else root.toggle()
     }
   }
 
   KeyboardPanel {
     id: panel
-    anchorItem: button
+    anchorItem: cluster
     owner: root
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(520))
+    contentWidth: panel.fittedContentWidth(Style.space(420))
+    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(560))
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -188,13 +254,20 @@ Panel {
 
       onMoveRequested: function(dx, dy) {
         root.cursorActive = true
-        if (dy !== 0) root.selectAction(root.actionIndex + dy)
+        if (dy !== 0) {
+          if (inbox.bots.length > 0) {
+            var n = inbox.bots.length
+            root.selectedBot = ((root.selectedBot + dy) % n + n) % n
+          } else {
+            root.selectAction(root.actionIndex + dy)
+          }
+        }
       }
       onActivateRequested: root.activateCursor()
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
-        if (t === "r" || t === "R") grok.refresh(false)
+        if (t === "r" || t === "R") { grok.refresh(false); inbox.refresh() }
         else if (t === "u") grok.checkForUpdates()
         else if (t === "U") grok.updateNow()
         else if (t === "g" || t === "G") { grok.openProduct(); root.close() }
@@ -224,14 +297,14 @@ Panel {
             detail: root.heroDetail()
             foreground: root.foreground
             fontFamily: root.fontFamily
-            iconOpacity: grok.installed ? 1.0 : 0.55
+            iconOpacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
             iconComponent: Component {
               GrokBotIcon {
                 iconSize: Style.space(42)
                 color: root.iconColor
-                running: grok.running
-                alarming: grok.alarming
-                installed: grok.installed
+                running: grok.running || inbox.lively
+                alarming: grok.alarming || inbox.unreadBots > 0
+                installed: grok.installed || inbox.hasSnapshot
               }
             }
             trailingControl: Component {
@@ -240,17 +313,17 @@ Panel {
                 tooltipText: "Refresh (R)"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
-                onClicked: grok.refresh(false)
+                onClicked: { grok.refresh(false); inbox.refresh() }
               }
             }
           }
 
           Text {
             textFormat: Text.PlainText
-            visible: grok.actionStatus !== "" || grok.lastError !== ""
+            visible: grok.actionStatus !== "" || grok.lastError !== "" || inbox.lastError !== ""
             width: parent.width
-            text: grok.actionStatus !== "" ? grok.actionStatus : grok.lastError
-            color: grok.lastError !== "" && grok.actionStatus === "" ? root.urgent : root.dim
+            text: grok.actionStatus !== "" ? grok.actionStatus : (grok.lastError !== "" ? grok.lastError : inbox.lastError)
+            color: (grok.lastError !== "" || inbox.lastError !== "") && grok.actionStatus === "" ? root.urgent : root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap
@@ -282,6 +355,162 @@ Panel {
               font.pixelSize: Style.font.caption
               wrapMode: Text.WordWrap
             }
+          }
+
+          Text {
+            textFormat: Text.PlainText
+            width: parent.width
+            text: inbox.demo
+              ? "GROK BOT · demo roster"
+              : (inbox.hasSnapshot ? "GROK BOT · inbox" : "GROK BOT")
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.letterSpacing: 0.6
+          }
+
+          Text {
+            textFormat: Text.PlainText
+            width: parent.width
+            text: root.heroDetail()
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+
+          Column {
+            width: parent.width
+            spacing: 0
+            visible: inbox.bots.length > 0
+
+            Repeater {
+              model: inbox.bots
+
+              Item {
+                id: row
+                required property var modelData
+                required property int index
+                width: parent.width
+                height: root.rowH
+
+                Rectangle {
+                  anchors.fill: parent
+                  radius: Style.cornerRadius
+                  color: row.index === 0 || (root.cursorActive && root.selectedBot === row.index)
+                    ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08)
+                    : "transparent"
+                }
+
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onEntered: {
+                    root.cursorActive = true
+                    root.selectedBot = row.index
+                  }
+                  onClicked: root.openBot(row.modelData)
+                }
+
+                RowLayout {
+                  anchors.fill: parent
+                  anchors.leftMargin: Style.space(8)
+                  anchors.rightMargin: Style.space(8)
+                  spacing: Style.space(10)
+
+                  BotFace {
+                    Layout.preferredWidth: Style.space(28)
+                    Layout.preferredHeight: Style.space(28)
+                    iconSize: Style.space(28)
+                    color: row.modelData.color
+                    shape: row.modelData.shape
+                    lively: row.modelData.waiting === true
+                    holeColor: root.holeColor
+                  }
+
+                  Column {
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    RowLayout {
+                      width: parent.width
+                      spacing: Style.space(6)
+                      Text {
+                        textFormat: Text.PlainText
+                        text: String(row.modelData.name || "Bot")
+                        color: root.foreground
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.body
+                        font.bold: true
+                        elide: Text.ElideRight
+                      }
+                      Text {
+                        Layout.fillWidth: true
+                        textFormat: Text.PlainText
+                        text: String(row.modelData.team || "")
+                        color: root.dim
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.caption
+                        elide: Text.ElideRight
+                      }
+                      Text {
+                        textFormat: Text.PlainText
+                        text: String(row.modelData.when || "")
+                        color: root.dim
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.caption
+                      }
+                    }
+
+                    Text {
+                      width: parent.width
+                      textFormat: Text.PlainText
+                      text: row.modelData.busy
+                        ? String(row.modelData.activity || "Working")
+                        : String(row.modelData.preview || "No messages yet")
+                      color: row.modelData.waiting ? root.foreground : root.dim
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                      elide: Text.ElideRight
+                    }
+                  }
+
+                  Rectangle {
+                    visible: Number(row.modelData.unread || 0) > 0
+                    Layout.preferredWidth: Style.space(22)
+                    Layout.preferredHeight: Style.space(22)
+                    radius: width / 2
+                    color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
+                    border.width: 1
+                    border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.28)
+
+                    Text {
+                      anchors.centerIn: parent
+                      textFormat: Text.PlainText
+                      text: String(row.modelData.unread)
+                      color: root.foreground
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          Text {
+            visible: inbox.bots.length === 0
+            width: parent.width
+            padding: Style.space(18)
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.body
+            textFormat: Text.PlainText
+            text: inbox.lastError !== ""
+              ? inbox.lastError
+              : "No bots yet. Drop a snapshot at ~/.local/state/glorics-grok-bots/inbox.json, or keep the demo roster on."
           }
 
           Column {
@@ -331,7 +560,9 @@ Panel {
             textFormat: Text.PlainText
             width: parent.width
             topPadding: Style.space(2)
-            text: "Community plugin · Linux AppImage"
+            text: inbox.demo
+              ? "Community plugin · demo roster · Linux AppImage"
+              : "Community plugin · Linux AppImage"
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -346,7 +577,7 @@ Panel {
   Timer {
     id: phraseTimer
     interval: 3200
-    running: root.opened && grok.installed && !grok.crashed && !grok.updating
+    running: root.opened && grok.installed && !grok.crashed && !grok.updating && !inbox.demo
     repeat: true
     onTriggered: phraseSwap.restart()
   }
@@ -415,7 +646,7 @@ Panel {
     property var action: null
     property int rowIndex: 0
 
-    hasCursor: root.cursorActive && root.actionIndex === rowIndex
+    hasCursor: root.cursorActive && inbox.bots.length === 0 && root.actionIndex === rowIndex
     foreground: root.foreground
     implicitHeight: actionInner.implicitHeight + Style.spacing.rowPaddingX
 

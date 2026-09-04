@@ -72,6 +72,28 @@ assert grok.pinned_artifact("0.99.0") == {}
 print("pinned digest ok · 0.30.0")
 PY
 
+python3 - "$root" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+manifest = json.loads((root / "manifest.json").read_text())
+assert manifest["id"] == "glorics.grok-bots", manifest["id"]
+assert manifest["name"] == "Grok Bots"
+roster = json.loads((root / "demo-roster.json").read_text())
+assert roster["ok"] is True
+assert roster["client"] == "glorics.grok-bots"
+assert roster["demo"] is True
+bots = roster["bots"]
+assert len(bots) == 14, len(bots)
+waiting = sum(1 for b in bots if b.get("waiting"))
+unread_bots = sum(1 for b in bots if int(b.get("unread") or 0) > 0)
+assert waiting == 1, waiting
+assert unread_bots == 4, unread_bots
+ids = [b["id"] for b in bots]
+assert len(set(ids)) == 14
+print("demo roster ok · 14 bots · 1 waiting · 4 unread")
+PY
+
 if command -v omarchy >/dev/null; then
   omarchy plugin validate "$root"
   echo "omarchy plugin validate ok"

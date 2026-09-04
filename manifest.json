@@ -1,25 +1,26 @@
 {
   "schemaVersion": 1,
-  "id": "glorics.grok-bot",
-  "name": "Grok Bot",
-  "version": "1.12.3",
+  "id": "glorics.grok-bots",
+  "name": "Grok Bots",
+  "version": "0.1.0",
   "author": "glorics",
   "license": "MIT",
-  "description": "Unofficial Omarchy bar widget for the Grok Bot Linux client. Themed x.ai/bot face, launch/focus, status, and optional Cursor CDN updates.",
+  "description": "Unofficial Omarchy bar roster for the Grok Bot Linux client. Themed face, inbox of bots, unread and waiting-on-you, launch/focus, status, and optional Cursor CDN updates.",
   "kinds": ["bar-widget"],
   "activation": "on-demand",
   "entryPoints": {
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Grok Bot",
-    "description": "One bar icon: themed x.ai/bot mascot, client status, and optional CDN updates.",
+    "displayName": "Grok Bots",
+    "description": "Bar cluster of bot faces, inbox roster, and the Linux client launcher.",
     "category": "AI",
-    "aliases": ["grok-bot", "grokbot"],
+    "aliases": ["grok-bots", "grok-bot-inbox", "grokbot-roster"],
     "allowMultiple": false,
     "defaultSection": "right",
     "defaults": {
-      "refreshIntervalSec": 15
+      "refreshIntervalSec": 15,
+      "useDemoRoster": true
     },
     "schema": [
       {
@@ -30,6 +31,12 @@
         "max": 3600,
         "step": 5,
         "defaultValue": 15
+      },
+      {
+        "key": "useDemoRoster",
+        "type": "boolean",
+        "label": "Show bundled demo roster when no inbox snapshot is present",
+        "defaultValue": true
       }
     ]
   }
