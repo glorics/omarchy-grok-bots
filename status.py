@@ -869,8 +869,14 @@ def status() -> dict:
         status_text = "Window closed"
 
     signed_in = any(path.exists() for path in SESSION_HINTS)
-    update_available = bool(latest and version and version_newer(latest, version))
-    can_update = bool(update_available and pinned_artifact(latest) and linux_latest)
+    # Darwin/desktop can be newer than Linux. Only flag an update when this
+    # snapshot pins a Linux AppImage we can actually install.
+    linux_ready = bool(latest and pinned_artifact(latest) and linux_latest)
+    update_available = bool(
+        linux_ready and version and version_newer(latest, version)
+    )
+    can_update = update_available
+    display_latest = latest if linux_ready else (version or latest)
 
     return {
         "ok": True,
@@ -884,7 +890,7 @@ def status() -> dict:
         "windowTitle": clip(window.get("title") or "", 80),
         "installedVersion": clip(installed_version or pkg, 32),
         "appVersion": clip(version, 32),
-        "latestVersion": clip(latest, 32),
+        "latestVersion": clip(display_latest, 32),
         "updateAvailable": update_available,
         "canSelfUpdate": can_update,
         "linuxUpdateUrl": linux_latest if can_update else "",

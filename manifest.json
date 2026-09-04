@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "glorics.grok-bots",
   "name": "Grok Bots",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "glorics",
   "license": "MIT",
   "description": "Unofficial Omarchy bar roster for the Grok Bot Linux client. Themed face, inbox of bots, unread and waiting-on-you, launch/focus, status, and optional Cursor CDN updates.",
