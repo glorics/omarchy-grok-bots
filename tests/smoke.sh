@@ -108,10 +108,12 @@ for bot in bots:
 print("inbox.py ok · bots=%d source=%s" % (len(bots), "yes" if data.get("sourcePath") else "none"))
 '
 python3 "$root/tests/unread.py"
+python3 "$root/tests/messages.py"
 if ! grep -q 'CountBubble' "$root/Panel.qml"; then
   echo "Panel.qml must use CountBubble on the bar" >&2
   exit 1
 fi
+
 
 
 if command -v omarchy >/dev/null; then
