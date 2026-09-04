@@ -283,8 +283,9 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(420))
+    contentWidth: panel.fittedContentWidth(Style.space(480))
     contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(560))
+    gap: Style.gapsOut
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -332,7 +333,7 @@ Panel {
             width: parent.width
             title: "Grok Bot"
             meta: root.heroMeta()
-            detail: root.heroDetail()
+            detail: ""
             foreground: root.foreground
             fontFamily: root.fontFamily
             iconOpacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
