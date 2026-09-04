@@ -70,10 +70,14 @@ Item {
       return tabletPath()
     if (kind === "capsule" || kind === "pill")
       return capsulePath()
+    if (kind === "wedge")
+      return polygonPath(3, -Math.PI / 2)
     if (kind === "hex" || kind === "hexagon")
-      return polygonPath(6, -Math.PI / 2)
+      return polygonPath(6, Math.PI / 6)
     if (kind === "pentagon")
       return polygonPath(5, -Math.PI / 2)
+    if (kind === "pebble")
+      return pebblePath()
     if (kind === "cloud")
       return cloudPath()
     if (kind === "teardrop")
@@ -124,6 +128,15 @@ Item {
       + " Q" + x0 + " " + y1 + " " + x0 + " " + (y1 - r)
       + " V" + (y0 + r)
       + " Q" + x0 + " " + y0 + " " + (x0 + r) + " " + y0
+      + " Z"
+  }
+
+  function pebblePath() {
+    var s = root.s
+    return "M" + (s * 0.38) + " " + (s * 0.06)
+      + " C" + (s * 0.86) + " " + (s * -0.02) + " " + (s * 1.04) + " " + (s * 0.44) + " " + (s * 0.90) + " " + (s * 0.72)
+      + " C" + (s * 0.80) + " " + (s * 0.92) + " " + (s * 0.30) + " " + (s * 0.98) + " " + (s * 0.14) + " " + (s * 0.86)
+      + " C" + (s * -0.04) + " " + (s * 0.70) + " " + (s * 0.04) + " " + (s * 0.20) + " " + (s * 0.38) + " " + (s * 0.06)
       + " Z"
   }
 

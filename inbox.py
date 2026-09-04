@@ -26,40 +26,27 @@ MAX_FIELD = 140
 O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 O_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
 
-# Palette Grok Bot uses for geometric faces.
+# Same tables and id-hash Grok Bot 0.30.0 uses when a bot has no custom face.
 COLORS = {
+    "black": "#000000",
+    "brown": "#936439",
     "red": "#FF263C",
     "orange": "#FF6700",
     "yellow": "#FF9800",
     "green": "#00C972",
     "cyan": "#00BCA6",
-    "teal": "#00BCA6",
     "blue": "#1084FE",
     "violet": "#9159FE",
-    "purple": "#9159FE",
     "magenta": "#FF309B",
-    "pink": "#FF309B",
-    "brown": "#936439",
     "gray": "#777777",
-    "grey": "#777777",
 }
-
-SHAPES = {
-    "tablet": "tablet",
-    "squircle": "squircle",
-    "square": "squircle",
-    "circle": "circle",
-    "round": "circle",
-    "hex": "hex",
-    "hexagon": "hex",
-    "capsule": "capsule",
-    "pill": "capsule",
-    "cloud": "cloud",
-    "teardrop": "teardrop",
-    "blob": "blob",
-    "egg": "egg",
-    "group": "group",
-}
+ALL_SHAPES = [
+    "blob", "pebble", "bean", "egg", "squircle", "tablet", "capsule",
+    "cylinder", "hex", "gem", "crystal", "wedge", "shield", "dome",
+    "arch", "cloud", "teardrop", "leaf",
+]
+DEFAULT_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"]
+DEFAULT_COLORS = ["brown", "red", "orange", "yellow", "green", "cyan", "blue", "violet", "magenta", "gray"]
 
 
 def clip(value, n: int = MAX_FIELD) -> str:
@@ -172,23 +159,77 @@ def decode_slice_name(stem: str) -> str:
     return text
 
 
-def map_color(name: str) -> str:
-    key = str(name or "").strip().lower()
+def u32(n: int) -> int:
+    return n & 0xFFFFFFFF
+
+
+def i32(n: int) -> int:
+    n = u32(n)
+    return n - 2**32 if n >= 2**31 else n
+
+
+def imul(a: int, b: int) -> int:
+    return u32(u32(a) * u32(b))
+
+
+def fnv1a(text: str) -> int:
+    h = 2166136261
+    for ch in text:
+        h ^= ord(ch)
+        h = imul(h, 16777619)
+    return u32(h)
+
+
+def shape_hash(bot_id: str) -> int:
+    e = i32(fnv1a(bot_id))
+    e = imul(e ^ (u32(e) >> 16), 73244475)
+    e = imul(e ^ (u32(e) >> 13), 3266489909)
+    return u32(e ^ (u32(e) >> 16))
+
+
+def mulberry32(seed: int):
+    e = u32(seed)
+
+    def rng() -> float:
+        nonlocal e
+        e = u32(i32(e) + 1831565813)
+        n = imul(e ^ (e >> 15), 1 | e)
+        n = u32(i32(n) + i32(imul(n ^ (n >> 7), 61 | n))) ^ n
+        n = u32(n)
+        return u32(n ^ (n >> 14)) / 4294967296.0
+
+    return rng
+
+
+def color_from_id(bot_id: str) -> str:
+    seed = u32(fnv1a(bot_id) ^ imul(1, 2654435769))
+    seed = u32(seed ^ imul(1, 2654435769))
+    idx = int(mulberry32(seed)() * len(DEFAULT_COLORS))
+    if idx < 0 or idx >= len(DEFAULT_COLORS):
+        return "gray"
+    return DEFAULT_COLORS[idx]
+
+
+def shape_from_id(bot_id: str) -> str:
+    return DEFAULT_SHAPES[shape_hash(bot_id) % len(DEFAULT_SHAPES)]
+
+
+def resolve_shape(row: dict, bot_id: str) -> str:
+    if row.get("isGroup") is True:
+        return "group"
+    key = str(row.get("avatarShape") or "").strip().lower()
+    if key in ALL_SHAPES:
+        return key
+    return shape_from_id(bot_id)
+
+
+def resolve_color(row: dict, bot_id: str) -> str:
+    key = str(row.get("avatarColor") or "").strip().lower()
+    if key == "grey":
+        key = "gray"
     if key in COLORS:
         return COLORS[key]
-    if key.startswith("#") and len(key) in (4, 7):
-        if all(ch in "0123456789abcdefABCDEF" for ch in key[1:]):
-            return key.lower()
-    return COLORS["gray"]
-
-
-def map_shape(name: str, is_group: bool = False) -> str:
-    key = str(name or "").strip().lower()
-    if key in SHAPES:
-        return SHAPES[key]
-    if is_group:
-        return "group"
-    return "squircle"
+    return COLORS[color_from_id(bot_id)]
 
 
 def relative_time(ms) -> str:
@@ -286,8 +327,8 @@ def sanitize_row(row: dict) -> dict | None:
         "waiting": waiting_flag(row.get("awaitingUserResponse")),
         "busy": False,
         "activity": "",
-        "shape": map_shape(row.get("avatarShape"), bool(row.get("isGroup"))),
-        "color": map_color(row.get("avatarColor")),
+        "shape": resolve_shape(row, ident),
+        "color": resolve_color(row, ident),
         "activityAt": int(activity_ms or 0),
     }
 

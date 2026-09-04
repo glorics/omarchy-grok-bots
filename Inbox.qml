@@ -129,7 +129,9 @@ Item {
     var ok = {
       "tablet": 1, "squircle": 1, "circle": 1, "hex": 1, "hexagon": 1,
       "capsule": 1, "pill": 1, "cloud": 1, "teardrop": 1, "blob": 1,
-      "egg": 1, "group": 1, "square": 1, "pentagon": 1
+      "egg": 1, "group": 1, "square": 1, "pentagon": 1, "wedge": 1,
+      "pebble": 1, "bean": 1, "gem": 1, "crystal": 1, "shield": 1,
+      "dome": 1, "arch": 1, "leaf": 1, "cylinder": 1
     }
     if (ok[s])
       return s === "hexagon" ? "hex" : (s === "square" ? "squircle" : s)
