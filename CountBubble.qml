@@ -6,8 +6,8 @@ Item {
   id: root
 
   property int count: 0
-  property color fill: Color.urgent
-  property color ink: Color.background
+  property color fill: "#ffffff"
+  property color ink: "#000000"
   property string fontFamily: Style.font.family
   property bool tail: true
 
@@ -25,6 +25,8 @@ Item {
     implicitHeight: Style.space(13)
     radius: height / 2
     color: root.fill
+    border.width: 1
+    border.color: Qt.rgba(0, 0, 0, 0.28)
 
     Text {
       id: label

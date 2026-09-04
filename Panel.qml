@@ -225,13 +225,13 @@ Panel {
 
         CountBubble {
           count: inbox.unreadCount
-          fill: root.urgent
-          ink: Color.background
+          fill: "#ffffff"
+          ink: "#000000"
+          tail: false
           fontFamily: root.fontFamily
           anchors.right: parent.right
-          anchors.top: parent.top
-          anchors.rightMargin: -Style.space(6)
-          anchors.topMargin: -Style.space(8)
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.rightMargin: -Style.space(5)
         }
       }
 
@@ -255,12 +255,13 @@ Panel {
 
           CountBubble {
             count: Number(modelData.unread || 0)
-            fill: root.urgent
-            ink: Color.background
+            fill: "#ffffff"
+            ink: "#000000"
+            tail: false
             fontFamily: root.fontFamily
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: -Style.space(8)
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.rightMargin: -Style.space(4)
           }
         }
       }
@@ -517,8 +518,8 @@ Panel {
                   CountBubble {
                     visible: Number(row.modelData.unread || 0) > 0
                     count: Number(row.modelData.unread || 0)
-                    fill: root.urgent
-                    ink: Color.background
+                    fill: "#ffffff"
+                    ink: "#000000"
                     fontFamily: root.fontFamily
                     tail: false
                     Layout.preferredWidth: implicitWidth
