@@ -267,10 +267,19 @@ Panel {
     }
   }
 
+  // Omarchy underlines the bar slot when activePopout === this Panel.
+  // Coordinate the popup on a nested owner so the open mark stays off.
+  Item {
+    id: popoutOwner
+    function close() { root.close() }
+    function closeForPopoutSwitch() { root.closeForPopoutSwitch() }
+    property bool popoutSwitchClosing: root.popoutSwitchClosing
+  }
+
   KeyboardPanel {
     id: panel
     anchorItem: button
-    owner: root
+    owner: popoutOwner
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
