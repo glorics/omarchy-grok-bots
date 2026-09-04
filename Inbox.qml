@@ -125,10 +125,15 @@ Item {
   }
 
   function allowShape(s) {
-    s = String(s || "square").toLowerCase()
-    if (s === "circle" || s === "square" || s === "pentagon" || s === "hexagon" || s === "blob")
-      return s
-    return "square"
+    s = String(s || "squircle").toLowerCase()
+    var ok = {
+      "tablet": 1, "squircle": 1, "circle": 1, "hex": 1, "hexagon": 1,
+      "capsule": 1, "pill": 1, "cloud": 1, "teardrop": 1, "blob": 1,
+      "egg": 1, "group": 1, "square": 1, "pentagon": 1
+    }
+    if (ok[s])
+      return s === "hexagon" ? "hex" : (s === "square" ? "squircle" : s)
+    return "squircle"
   }
 
   function sanitizeBots(arr) {

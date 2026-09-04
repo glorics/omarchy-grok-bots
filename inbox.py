@@ -26,36 +26,39 @@ MAX_FIELD = 140
 O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 O_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
 
+# Palette Grok Bot uses for geometric faces.
 COLORS = {
-    "red": "#e23d3d",
-    "orange": "#f08a2a",
-    "yellow": "#c9a227",
-    "green": "#3dbe5a",
-    "teal": "#2ec4b6",
-    "cyan": "#2ec4b6",
-    "blue": "#4aa3ff",
-    "purple": "#7b5cff",
-    "violet": "#7b5cff",
-    "pink": "#ff6b8a",
-    "magenta": "#c44dff",
-    "brown": "#a15c38",
-    "gray": "#9aa4b2",
-    "grey": "#9aa4b2",
-    "black": "#5b5b5b",
+    "red": "#FF263C",
+    "orange": "#FF6700",
+    "yellow": "#FF9800",
+    "green": "#00C972",
+    "cyan": "#00BCA6",
+    "teal": "#00BCA6",
+    "blue": "#1084FE",
+    "violet": "#9159FE",
+    "purple": "#9159FE",
+    "magenta": "#FF309B",
+    "pink": "#FF309B",
+    "brown": "#936439",
+    "gray": "#777777",
+    "grey": "#777777",
 }
 
 SHAPES = {
-    "tablet": "square",
-    "square": "square",
-    "rect": "square",
+    "tablet": "tablet",
+    "squircle": "squircle",
+    "square": "squircle",
     "circle": "circle",
     "round": "circle",
-    "hexagon": "hexagon",
-    "hex": "hexagon",
-    "pentagon": "pentagon",
+    "hex": "hex",
+    "hexagon": "hex",
+    "capsule": "capsule",
+    "pill": "capsule",
+    "cloud": "cloud",
+    "teardrop": "teardrop",
     "blob": "blob",
-    "pill": "blob",
-    "orb": "circle",
+    "egg": "egg",
+    "group": "group",
 }
 
 
@@ -169,23 +172,23 @@ def decode_slice_name(stem: str) -> str:
     return text
 
 
-def map_color(name: str, fallback_id: str) -> str:
+def map_color(name: str) -> str:
     key = str(name or "").strip().lower()
     if key in COLORS:
         return COLORS[key]
     if key.startswith("#") and len(key) in (4, 7):
         if all(ch in "0123456789abcdefABCDEF" for ch in key[1:]):
             return key.lower()
-    digest = 0
-    for ch in fallback_id:
-        digest = (digest * 33 + ord(ch)) & 0xFFFFFF
-    palette = list(COLORS.values())
-    return palette[digest % len(palette)]
+    return COLORS["gray"]
 
 
-def map_shape(name: str) -> str:
+def map_shape(name: str, is_group: bool = False) -> str:
     key = str(name or "").strip().lower()
-    return SHAPES.get(key, "square")
+    if key in SHAPES:
+        return SHAPES[key]
+    if is_group:
+        return "group"
+    return "squircle"
 
 
 def relative_time(ms) -> str:
@@ -240,8 +243,19 @@ def team_text(row: dict) -> str:
     return desc
 
 
+def is_blank_stub(row: dict) -> bool:
+    name = str(row.get("name") or "").strip().lower()
+    if row.get("lastEntry") or clip(row.get("description")):
+        return False
+    return name in ("", "new bot", "(unnamed)")
+
+
 def sanitize_row(row: dict) -> dict | None:
     if not isinstance(row, dict):
+        return None
+    if row.get("isHiddenFromSidebar") is True:
+        return None
+    if is_blank_stub(row):
         return None
     ident = clip(row.get("id"), 80)
     if not ident:
@@ -272,8 +286,8 @@ def sanitize_row(row: dict) -> dict | None:
         "waiting": waiting_flag(row.get("awaitingUserResponse")),
         "busy": False,
         "activity": "",
-        "shape": map_shape(row.get("avatarShape")),
-        "color": map_color(row.get("avatarColor"), ident),
+        "shape": map_shape(row.get("avatarShape"), bool(row.get("isGroup"))),
+        "color": map_color(row.get("avatarColor")),
         "activityAt": int(activity_ms or 0),
     }
 

@@ -63,24 +63,58 @@ Item {
   }
 
   function bodyPath() {
-    var kind = String(root.shape || "square").toLowerCase()
+    var kind = String(root.shape || "squircle").toLowerCase()
     if (kind === "circle")
       return circlePath()
-    if (kind === "hexagon")
-      return polygonPath(6, 0)
+    if (kind === "tablet")
+      return tabletPath()
+    if (kind === "capsule" || kind === "pill")
+      return capsulePath()
+    if (kind === "hex" || kind === "hexagon")
+      return polygonPath(6, -Math.PI / 2)
     if (kind === "pentagon")
       return polygonPath(5, -Math.PI / 2)
+    if (kind === "cloud")
+      return cloudPath()
+    if (kind === "teardrop")
+      return teardropPath()
+    if (kind === "egg")
+      return eggPath()
     if (kind === "blob")
       return blobPath()
-    return roundedSquarePath()
+    if (kind === "group")
+      return groupPath()
+    return squirclePath()
   }
 
-  function roundedSquarePath() {
-    var r = root.s * 0.22
+  function tabletPath() {
+    var r = root.s * 0.16
     var x0 = root.s * 0.06
-    var y0 = root.s * 0.06
+    var y0 = root.s * 0.16
     var x1 = root.s * 0.94
-    var y1 = root.s * 0.94
+    var y1 = root.s * 0.84
+    return roundedRectPath(x0, y0, x1, y1, r)
+  }
+
+  function capsulePath() {
+    var r = root.s * 0.28
+    var x0 = root.s * 0.22
+    var y0 = root.s * 0.04
+    var x1 = root.s * 0.78
+    var y1 = root.s * 0.96
+    return roundedRectPath(x0, y0, x1, y1, r)
+  }
+
+  function squirclePath() {
+    var r = root.s * 0.30
+    var x0 = root.s * 0.04
+    var y0 = root.s * 0.04
+    var x1 = root.s * 0.96
+    var y1 = root.s * 0.96
+    return roundedRectPath(x0, y0, x1, y1, r)
+  }
+
+  function roundedRectPath(x0, y0, x1, y1, r) {
     return "M" + (x0 + r) + " " + y0
       + " H" + (x1 - r)
       + " Q" + x1 + " " + y0 + " " + x1 + " " + (y0 + r)
@@ -90,6 +124,44 @@ Item {
       + " Q" + x0 + " " + y1 + " " + x0 + " " + (y1 - r)
       + " V" + (y0 + r)
       + " Q" + x0 + " " + y0 + " " + (x0 + r) + " " + y0
+      + " Z"
+  }
+
+  function eggPath() {
+    var s = root.s
+    return "M" + (s * 0.50) + " " + (s * 0.02)
+      + " C" + (s * 0.82) + " " + (s * 0.04) + " " + (s * 0.98) + " " + (s * 0.48) + " " + (s * 0.50) + " " + (s * 0.98)
+      + " C" + (s * 0.02) + " " + (s * 0.48) + " " + (s * 0.18) + " " + (s * 0.04) + " " + (s * 0.50) + " " + (s * 0.02)
+      + " Z"
+  }
+
+  function cloudPath() {
+    var s = root.s
+    return "M" + (s * 0.22) + " " + (s * 0.86)
+      + " C" + (s * -0.04) + " " + (s * 0.86) + " " + (s * 0.00) + " " + (s * 0.48) + " " + (s * 0.22) + " " + (s * 0.48)
+      + " C" + (s * 0.20) + " " + (s * 0.10) + " " + (s * 0.72) + " " + (s * 0.06) + " " + (s * 0.76) + " " + (s * 0.42)
+      + " C" + (s * 1.04) + " " + (s * 0.40) + " " + (s * 1.04) + " " + (s * 0.86) + " " + (s * 0.78) + " " + (s * 0.86)
+      + " Z"
+  }
+
+  function teardropPath() {
+    var s = root.s
+    return "M" + (s * 0.50) + " " + (s * 0.00)
+      + " C" + (s * 0.92) + " " + (s * 0.42) + " " + (s * 1.00) + " " + (s * 0.66) + " " + (s * 0.84) + " " + (s * 0.86)
+      + " C" + (s * 0.64) + " " + (s * 1.08) + " " + (s * 0.36) + " " + (s * 1.08) + " " + (s * 0.16) + " " + (s * 0.86)
+      + " C" + (s * 0.00) + " " + (s * 0.66) + " " + (s * 0.08) + " " + (s * 0.42) + " " + (s * 0.50) + " " + (s * 0.00)
+      + " Z"
+  }
+
+  function groupPath() {
+    var s = root.s
+    return circleAt(s * 0.33, s * 0.50, s * 0.30) + " " + circleAt(s * 0.67, s * 0.50, s * 0.30)
+  }
+
+  function circleAt(cx, cy, r) {
+    return "M" + (cx + r) + " " + cy
+      + " A" + r + " " + r + " 0 1 1 " + (cx - r) + " " + cy
+      + " A" + r + " " + r + " 0 1 1 " + (cx + r) + " " + cy
       + " Z"
   }
 
