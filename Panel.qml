@@ -215,40 +215,45 @@ Panel {
           opacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
         }
 
-        Rectangle {
-          visible: inbox.unreadBots > 0
+        CountBubble {
+          count: inbox.unreadCount
+          fill: root.urgent
+          ink: Color.background
+          fontFamily: root.fontFamily
           anchors.right: parent.right
           anchors.top: parent.top
-          anchors.rightMargin: -Style.space(4)
-          anchors.topMargin: -Style.space(3)
-          width: badgeText.implicitWidth + Style.space(6)
-          height: Style.space(12)
-          radius: height / 2
-          color: root.urgent
-
-          Text {
-            id: badgeText
-            anchors.centerIn: parent
-            textFormat: Text.PlainText
-            text: inbox.unreadBots > 99 ? "99" : String(inbox.unreadBots)
-            color: Color.background
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
-            font.bold: true
-          }
+          anchors.rightMargin: -Style.space(6)
+          anchors.topMargin: -Style.space(8)
         }
       }
 
       Repeater {
         model: inbox.attentionBots
-        BotFace {
+        Item {
           required property var modelData
+          width: Style.space(16)
+          height: Style.space(18)
           anchors.verticalCenter: parent.verticalCenter
-          iconSize: Style.space(16)
-          color: modelData.color
-          shape: modelData.shape
-          lively: modelData.waiting || Number(modelData.unread || 0) > 0
-          holeColor: root.holeColor
+
+          BotFace {
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            iconSize: Style.space(16)
+            color: modelData.color
+            shape: modelData.shape
+            lively: modelData.waiting || Number(modelData.unread || 0) > 0
+            holeColor: root.holeColor
+          }
+
+          CountBubble {
+            count: Number(modelData.unread || 0)
+            fill: root.urgent
+            ink: Color.background
+            fontFamily: root.fontFamily
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: -Style.space(8)
+          }
         }
       }
     }
@@ -491,23 +496,15 @@ Panel {
                     }
                   }
 
-                  Rectangle {
+                  CountBubble {
                     visible: Number(row.modelData.unread || 0) > 0
-                    Layout.preferredWidth: Style.space(22)
-                    Layout.preferredHeight: Style.space(22)
-                    radius: width / 2
-                    color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
-                    border.width: 1
-                    border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.28)
-
-                    Text {
-                      anchors.centerIn: parent
-                      textFormat: Text.PlainText
-                      text: String(row.modelData.unread)
-                      color: root.foreground
-                      font.family: root.fontFamily
-                      font.pixelSize: Style.font.caption
-                    }
+                    count: Number(row.modelData.unread || 0)
+                    fill: root.urgent
+                    ink: Color.background
+                    fontFamily: root.fontFamily
+                    tail: false
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
                   }
                 }
               }

@@ -1,5 +1,5 @@
-*.qmlc
-*.jsc
-.qmlcache/
 .DS_Store
+*.jsc
 __pycache__/
+*.qmlc
+.qmlcache/
