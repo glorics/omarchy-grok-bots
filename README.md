@@ -14,7 +14,7 @@ This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It 
 - Shows whether the window is open
 - Can check Cursor's update feed and, when you click **Update now**, install a Linux AppImage whose URL, size, and SHA-256 are pinned in this snapshot
 
-It does not read Grok Bot tokens, cookies, `sand-secrets.json`, or transcript blobs. Live inbox rows come from the official client's **last-roster** slice under `~/.config/Grok Bot/sand-client-persistence` (names, last-message preview, unread, waiting-on-you). Click a row to open or focus the Linux client. A bundled demo roster exists but is off by default.
+It does not read Grok Bot tokens, cookies, `sand-secrets.json`, or transcript blobs. Live inbox rows come from the official client's **last-roster** slice under `~/.config/Grok Bot/sand-client-persistence` (names, last-message preview, unread, waiting-on-you). Click a row to open or focus the Linux client. There is no fake roster on the bar.
 
 ## External dependency
 
@@ -40,7 +40,7 @@ Leave `glorics.grok-bot` installed if you still want the listed launcher.
 
 The widget re-reads the official client's last-roster file about every five seconds, and again when that file changes. At most 24 bots. Previews are clipped. Transcript blobs are not opened.
 
-Turn on **Show bundled demo roster** in plugin settings only if you want the fake 14-bot layout.
+The bar shows only the bots in your signed-in Grok Bot client.
 
 ## License
 

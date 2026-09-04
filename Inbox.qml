@@ -16,7 +16,7 @@ Item {
 
   readonly property int maxInboxBytes: 65536
   readonly property int maxBots: 24
-  readonly property bool useDemoRoster: boolSetting("useDemoRoster", false)
+  readonly property bool useDemoRoster: false
 
   readonly property int botCount: bots.length
   readonly property int unreadCount: {
@@ -210,18 +210,6 @@ Item {
     inboxProcess.running = true
   }
 
-  function loadDemo() {
-    if (!root.useDemoRoster) {
-      root.refreshing = false
-      root.hasSnapshot = false
-      root.demo = false
-      root.bots = []
-      root.lastError = ""
-      return
-    }
-    demoFile.reload()
-  }
-
   Process {
     id: inboxProcess
     running: false
@@ -233,18 +221,12 @@ Item {
       var stderr = String(inboxStderr.text || root._inboxError || "")
       if (exitCode === 0 && stdout.trim() !== "") {
         root.applyInbox(stdout, false)
-        if (root.bots.length === 0 && root.useDemoRoster)
-          root.loadDemo()
       } else {
         root.refreshing = false
-        if (root.useDemoRoster)
-          root.loadDemo()
-        else {
-          root.lastError = root.clip(stderr || "Could not read Grok Bot roster", 80)
-          root.hasSnapshot = false
-          root.bots = []
-          root.demo = false
-        }
+        root.lastError = root.clip(stderr || "Could not read Grok Bot roster", 80)
+        root.hasSnapshot = false
+        root.bots = []
+        root.demo = false
       }
     }
   }
@@ -255,23 +237,6 @@ Item {
     watchChanges: true
     printErrors: false
     onFileChanged: root.refresh()
-  }
-
-  FileView {
-    id: demoFile
-    path: {
-      var u = String(Qt.resolvedUrl("demo-roster.json"))
-      return u.indexOf("file://") === 0 ? decodeURIComponent(u.substring(7)) : ""
-    }
-    printErrors: false
-    onLoaded: root.applyInbox(text(), true)
-    onLoadFailed: {
-      root.refreshing = false
-      root.hasSnapshot = false
-      root.demo = false
-      root.bots = []
-      root.lastError = "Could not read demo roster"
-    }
   }
 
   Timer {
