@@ -115,6 +115,10 @@ if ! grep -q 'CountBubble' "$root/Panel.qml"; then
   echo "Panel.qml must use CountBubble on the bar" >&2
   exit 1
 fi
+if ! grep -q 'out.length >= 8' "$root/Inbox.qml"; then
+  echo "Inbox.qml must allow more than three faces on the bar" >&2
+  exit 1
+fi
 
 
 

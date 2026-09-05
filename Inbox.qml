@@ -41,7 +41,7 @@ Item {
     var out = []
     var ids = ""
     function add(b) {
-      if (!b || !b.id || out.length >= 3)
+      if (!b || !b.id || out.length >= 8)
         return
       if (ids.indexOf("|" + b.id + "|") >= 0)
         return

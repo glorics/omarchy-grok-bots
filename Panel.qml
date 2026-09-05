@@ -205,7 +205,7 @@ Panel {
     Row {
       id: cluster
       anchors.centerIn: parent
-      spacing: Style.space(4)
+      spacing: Style.space(2)
       height: Style.space(22)
 
       Item {

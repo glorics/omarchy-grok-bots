@@ -11,9 +11,9 @@ This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It 
 | Plugin | Id | Version | What it is |
 |---|---|---|---|
 | Grok Bot (listed) | `glorics.grok-bot` | 1.12.3 | Bar face. Launch or focus the Linux AppImage. Status. Optional pinned Cursor CDN update. |
-| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.3 | All of that, plus the inbox: your real bots on the bar with the same faces as in the app, last message, unread bubbles, waiting-on-you. |
+| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.4 | All of that, plus the inbox: your real bots on the bar with the same faces as in the app, last message, unread bubbles, waiting-on-you. |
 
-0.3.3 is the listing snapshot. Refresh and Check for updates read the version Grok Bot itself reports. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
+0.3.4 is the listing snapshot. The bar cluster shows the hub plus up to eight bot faces. Refresh reads Grok Bot's own version. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
 
 ## What it does
 
