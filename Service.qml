@@ -11,6 +11,7 @@ Item {
   property bool running: false
   property bool crashed: false
   property bool updateAvailable: false
+  property bool newerKnown: false
   property bool canSelfUpdate: false
   property bool refreshing: false
   property bool updating: false
@@ -108,6 +109,7 @@ Item {
     running = data.running === true
     crashed = data.crashed === true
     updateAvailable = data.updateAvailable === true
+    newerKnown = data.newerKnown === true
     canSelfUpdate = data.canSelfUpdate === true
     source = clip(data.source || "none", 24)
     sourceLabel = clip(data.sourceLabel || "", 64)

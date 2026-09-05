@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Read the Grok Bot Linux client's local roster snapshot.
 
-Walks ~/.config/Grok Bot/sand-client-persistence with O_NOFOLLOW. Reads only
-the last-roster slice (names, last-message preview, unread, waiting). Does
-not read tokens, cookies, secrets, or transcript blobs.
+Walks ~/.config/Grok Bot/sand-client-persistence with O_NOFOLLOW. Reads the
+last-roster slice (names, unread, waiting) and, for those same bot ids, the
+last few `kind=message` lines of each matching transcript replica (live
+window, clipped). Does not read tokens, cookies, secrets, or full
+transcript history. `--watch` prints a JSON line whenever those files change.
 """
 
 from __future__ import annotations
@@ -25,9 +27,15 @@ PERSIST_DIR = Path(
     )
 )
 MAX_FILE_BYTES = 64 * 1024
+MAX_TRANSCRIPT_BYTES = 256 * 1024
 MAX_STDOUT_BYTES = 256 * 1024
 MAX_BOTS = 24
+MAX_TRANSCRIPTS = 8
 MAX_FIELD = 140
+MAX_LIVE_TEXT = 160
+MAX_LIVE_MESSAGES = 8
+LIVE_BUSY_MS = 20_000
+WATCH_SLEEP_SEC = 0.1
 O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 O_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
 
@@ -295,6 +303,106 @@ def waiting_flag(value) -> bool:
     return True
 
 
+def message_content(item: dict, n: int = MAX_FIELD) -> str:
+    raw = item.get("content")
+    if raw is None:
+        raw = item.get("text")
+    if isinstance(raw, list):
+        parts = []
+        for piece in raw:
+            if isinstance(piece, str):
+                parts.append(piece)
+            elif isinstance(piece, dict):
+                parts.append(str(piece.get("text") or ""))
+        raw = " ".join(parts)
+    return clip(raw, n)
+
+
+def last_replica_feed(dir_fd: int, name: str) -> tuple[str, str, bool, list]:
+    """Live window: last few messages, oldest first. Never emit the replica."""
+    empty: list = []
+    raw = _read_at(dir_fd, name, MAX_TRANSCRIPT_BYTES)
+    if not raw:
+        return "", "", False, empty
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        return "", "", False, empty
+    if not isinstance(data, dict) or int(data.get("schemaVersion") or 0) < 1:
+        return "", "", False, empty
+    value = data.get("value")
+    entries = value.get("entries") if isinstance(value, dict) else None
+    if not isinstance(entries, list) or not entries:
+        return "", "", False, empty
+    tail = entries[-48:] if len(entries) > 48 else entries
+    found: list[dict] = []
+    streaming = False
+    for item in reversed(tail):
+        if not isinstance(item, dict) or item.get("kind") != "message":
+            continue
+        live = item.get("isStreaming") is True
+        if live:
+            streaming = True
+        text = message_content(item, MAX_LIVE_TEXT)
+        if not text and not live:
+            continue
+        role = "assistant" if item.get("role") == "assistant" else "user"
+        found.append({
+            "id": clip(item.get("id"), 40),
+            "role": role,
+            "text": text,
+            "streaming": live,
+        })
+        if len(found) >= MAX_LIVE_MESSAGES:
+            break
+    found.reverse()
+    if not found:
+        return "", "", streaming, empty
+    preview = found[-1]["text"]
+    older = [m["text"] for m in found[:-1][-2:]]
+    feed = " · ".join(older)
+    return preview, feed, streaming, found
+
+
+def replica_bot_id(slice_name: str) -> str:
+    marker = ".transcript.replicas."
+    if marker not in slice_name or "transcript" not in slice_name:
+        return ""
+    ident = slice_name.rsplit(".", 1)[-1]
+    if not ident or len(ident) > 80:
+        return ""
+    for ch in ident:
+        ok = ch.isalnum() or ch in "._-:"
+        if not ok:
+            return ""
+    return ident
+
+
+def apply_live_line(bot: dict, text: str, feed: str, streaming: bool, now_ms: float, messages: list | None = None) -> None:
+    if text:
+        bot["preview"] = text
+    if feed:
+        bot["feed"] = feed
+    bot["messages"] = messages if messages else []
+    if streaming:
+        bot["busy"] = True
+        bot["activity"] = "Working"
+    try:
+        activity = int(bot.get("activityAt") or 0)
+    except (TypeError, ValueError):
+        activity = 0
+    if activity > 1e12:
+        age = now_ms - activity
+    elif activity > 0:
+        age = now_ms - (activity * 1000.0)
+    else:
+        age = None
+    if age is not None and 0 <= age < LIVE_BUSY_MS:
+        bot["busy"] = True
+        if not bot.get("activity"):
+            bot["activity"] = "Working"
+
+
 def preview_text(row: dict) -> str:
     entry = row.get("lastEntry")
     if isinstance(entry, dict):
@@ -345,6 +453,8 @@ def sanitize_row(row: dict) -> dict | None:
         "name": clip(row.get("name") or "Bot", 80),
         "team": team_text(row),
         "preview": preview_text(row),
+        "feed": "",
+        "messages": [],
         "when": relative_time(activity_ms),
         "unread": unread_n,
         "waiting": waiting,
@@ -369,10 +479,18 @@ def load_roster() -> dict:
         except OSError:
             return empty("Could not list Grok Bot state")
         found: list[tuple[int, str, dict]] = []
+        replicas: dict[str, str] = {}
         for name in names:
             if not name.endswith(".blob") or not _basename_ok(name):
                 continue
             slice_name = decode_slice_name(name[:-5])
+            if not slice_name:
+                continue
+            replica_id = replica_bot_id(slice_name)
+            if replica_id:
+                if replica_id not in replicas and len(replicas) < MAX_BOTS:
+                    replicas[replica_id] = name
+                continue
             if not slice_name.endswith(".roster.last-roster"):
                 continue
             if "transcript" in slice_name:
@@ -406,12 +524,21 @@ def load_roster() -> dict:
         _mtime, source, data = found[0]
         rows = data["value"]["rows"]
         bots = []
+        now_ms = time.time() * 1000.0
         for row in rows[:MAX_BOTS]:
             item = sanitize_row(row)
             if item:
                 bots.append(item)
         bots.sort(key=lambda b: (not b["waiting"], b["unread"] <= 0, -int(b.get("activityAt") or 0)))
+        used = 0
         for bot in bots:
+            name = replicas.get(bot["id"])
+            if name and used < MAX_TRANSCRIPTS:
+                text, feed, streaming, messages = last_replica_feed(dir_fd, name)
+                apply_live_line(bot, text, feed, streaming, now_ms, messages)
+                used += 1
+            else:
+                apply_live_line(bot, "", "", False, now_ms, [])
             bot.pop("activityAt", None)
         return {
             "ok": True,
@@ -424,7 +551,22 @@ def load_roster() -> dict:
         os.close(dir_fd)
 
 
+def watch_loop() -> int:
+    """Stay up and print one JSON object per change. No history dump."""
+    prev = ""
+    while True:
+        data = load_roster()
+        line = json.dumps(data, ensure_ascii=True, separators=(",", ":"))
+        if line != prev:
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+            prev = line
+        time.sleep(WATCH_SLEEP_SEC)
+
+
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "--watch":
+        return watch_loop()
     emit(load_roster())
     return 0
 

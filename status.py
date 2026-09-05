@@ -883,11 +883,10 @@ def status() -> dict:
     # Darwin/desktop can be newer than Linux. Only flag an update when this
     # snapshot pins a Linux AppImage we can actually install.
     linux_ready = bool(latest and pinned_artifact(latest) and linux_latest)
-    update_available = bool(
-        linux_ready and version and version_newer(latest, version)
-    )
+    newer_known = bool(latest and version and version_newer(latest, version))
+    update_available = bool(linux_ready and newer_known)
     can_update = update_available
-    display_latest = latest if linux_ready else (version or latest)
+    display_latest = latest or version
 
     return {
         "ok": True,
@@ -903,6 +902,7 @@ def status() -> dict:
         "appVersion": clip(version, 32),
         "latestVersion": clip(display_latest, 32),
         "updateAvailable": update_available,
+        "newerKnown": newer_known,
         "canSelfUpdate": can_update,
         "linuxUpdateUrl": linux_latest if can_update else "",
         "launcher": launcher,

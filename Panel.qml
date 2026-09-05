@@ -37,7 +37,7 @@ Panel {
   readonly property color iconColor: grok.crashed || grok.updateAvailable ? urgent : foreground
   readonly property color barIconColor: grok.alarming ? (bar ? bar.urgent : urgent) : (bar ? bar.barForeground : foreground)
   readonly property color holeColor: bar ? (bar.background || Color.bar.background) : Color.background
-  readonly property int rowH: Style.space(58)
+  readonly property int rowH: Style.space(72)
   readonly property var actions: buildActions()
   readonly property var selectedAction: actions.length > 0 ? actions[Math.max(0, Math.min(actionIndex, actions.length - 1))] : null
 
@@ -137,7 +137,10 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  onOpenedChanged: if (opened) {
+  onOpenedChanged: {
+    inbox.live = opened
+    if (!opened)
+      return
     cursorActive = false
     actionIndex = 0
     phraseIndex = 0
@@ -217,8 +220,8 @@ Panel {
           anchors.centerIn: parent
           iconSize: Style.space(16)
           color: root.barIconColor
-          running: grok.running || inbox.lively
-          alarming: grok.alarming || inbox.unreadBots > 0
+          running: true
+          alarming: grok.crashed
           installed: grok.installed || inbox.hasSnapshot
           opacity: grok.installed || inbox.hasSnapshot ? 1.0 : 0.55
         }
@@ -285,7 +288,7 @@ Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(480))
-    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(560))
+    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(640))
     gap: Style.gapsOut
 
     PanelKeyCatcher {
@@ -342,8 +345,8 @@ Panel {
               GrokBotIcon {
                 iconSize: Style.space(42)
                 color: root.iconColor
-                running: grok.running || inbox.lively
-                alarming: grok.alarming || inbox.unreadBots > 0
+                running: true
+                alarming: grok.crashed
                 installed: grok.installed || inbox.hasSnapshot
               }
             }
@@ -418,18 +421,95 @@ Panel {
             font.pixelSize: Style.font.bodySmall
           }
 
+          ListView {
+            id: liveChat
+            width: parent.width
+            height: inbox.chatModel.count > 0 ? Style.space(220) : 0
+            visible: inbox.chatModel.count > 0
+            clip: true
+            spacing: Style.space(6)
+            boundsBehavior: Flickable.StopAtBounds
+            model: inbox.chatModel
+            onCountChanged: Qt.callLater(function() { liveChat.positionViewAtEnd() })
+
+            displaced: Transition {
+              NumberAnimation { property: "y"; duration: 160; easing.type: Easing.OutQuad }
+            }
+            add: Transition {
+              NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 140 }
+            }
+
+            delegate: Item {
+              required property string botName
+              required property string faceShape
+              required property string faceColor
+              required property string role
+              required property string line
+              required property bool streaming
+              width: liveChat.width
+              height: chatCol.implicitHeight
+
+              Row {
+                width: parent.width
+                spacing: Style.space(8)
+
+                BotFace {
+                  iconSize: Style.space(18)
+                  color: faceColor
+                  shape: faceShape
+                  lively: streaming
+                  holeColor: root.holeColor
+                }
+
+                Column {
+                  id: chatCol
+                  width: parent.width - Style.space(28)
+                  spacing: 1
+                  Text {
+                    width: parent.width
+                    textFormat: Text.PlainText
+                    text: String(botName || "") + (streaming ? " ·" : "")
+                    color: root.dim
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                    elide: Text.ElideRight
+                  }
+                  Text {
+                    width: parent.width
+                    textFormat: Text.PlainText
+                    text: String(line || "")
+                    color: role === "assistant" ? root.foreground : root.dim
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                    wrapMode: Text.Wrap
+                  }
+                }
+              }
+            }
+          }
+
           Column {
             width: parent.width
             spacing: 0
             visible: inbox.bots.length > 0
 
             Repeater {
-              model: inbox.bots
+              model: inbox.botsModel
 
               Item {
                 id: row
-                required property var modelData
                 required property int index
+                required property string name
+                required property string team
+                required property string preview
+                required property string feed
+                required property string when
+                required property int unread
+                required property bool waiting
+                required property bool busy
+                required property string activity
+                required property string shape
+                required property string color
                 width: parent.width
                 height: root.rowH
 
@@ -449,7 +529,7 @@ Panel {
                     root.cursorActive = true
                     root.selectedBot = row.index
                   }
-                  onClicked: root.openBot(row.modelData)
+                  onClicked: root.openBot(inbox.bots[row.index])
                 }
 
                 RowLayout {
@@ -462,9 +542,9 @@ Panel {
                     Layout.preferredWidth: Style.space(28)
                     Layout.preferredHeight: Style.space(28)
                     iconSize: Style.space(28)
-                    color: row.modelData.color
-                    shape: row.modelData.shape
-                    lively: row.modelData.waiting === true
+                    color: row.color
+                    shape: row.shape
+                    lively: row.waiting || row.busy || row.unread > 0
                     holeColor: root.holeColor
                   }
 
@@ -477,7 +557,7 @@ Panel {
                       spacing: Style.space(6)
                       Text {
                         textFormat: Text.PlainText
-                        text: String(row.modelData.name || "Bot")
+                        text: String(row.name || "Bot")
                         color: root.foreground
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.body
@@ -487,7 +567,7 @@ Panel {
                       Text {
                         Layout.fillWidth: true
                         textFormat: Text.PlainText
-                        text: String(row.modelData.team || "")
+                        text: String(row.team || "")
                         color: root.dim
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
@@ -495,7 +575,7 @@ Panel {
                       }
                       Text {
                         textFormat: Text.PlainText
-                        text: String(row.modelData.when || "")
+                        text: String(row.when || "")
                         color: root.dim
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
@@ -505,10 +585,25 @@ Panel {
                     Text {
                       width: parent.width
                       textFormat: Text.PlainText
-                      text: row.modelData.busy
-                        ? String(row.modelData.activity || "Working")
-                        : String(row.modelData.preview || "No messages yet")
-                      color: row.modelData.waiting ? root.foreground : root.dim
+                      text: {
+                        var _tick = inbox.stamp
+                        var line = String(row.preview || "No messages yet")
+                        if (row.busy)
+                          return "Working · " + line
+                        return line
+                      }
+                      color: (row.waiting || row.busy) ? root.foreground : root.dim
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                      elide: Text.ElideRight
+                    }
+
+                    Text {
+                      width: parent.width
+                      visible: String(row.feed || "") !== ""
+                      textFormat: Text.PlainText
+                      text: String(row.feed || "")
+                      color: root.dim
                       font.family: root.fontFamily
                       font.pixelSize: Style.font.caption
                       elide: Text.ElideRight
@@ -516,8 +611,8 @@ Panel {
                   }
 
                   CountBubble {
-                    visible: Number(row.modelData.unread || 0) > 0
-                    count: Number(row.modelData.unread || 0)
+                    visible: row.unread > 0
+                    count: row.unread
                     fill: "#ffffff"
                     ink: "#000000"
                     fontFamily: root.fontFamily
@@ -561,7 +656,7 @@ Panel {
             InfoPair {
               visible: grok.latestVersion !== ""
               label: "Latest"
-              value: grok.latestVersion + (grok.updateAvailable ? " · newer" : " · current")
+              value: grok.latestVersion + ((grok.updateAvailable || grok.newerKnown) ? " · newer" : " · current")
             }
             InfoPair {
               visible: grok.lastCheckText !== ""
@@ -606,6 +701,14 @@ Panel {
         }
       }
     }
+  }
+
+  Timer {
+    id: liveTimer
+    interval: 800
+    running: root.opened
+    repeat: true
+    onTriggered: inbox.refresh()
   }
 
   Timer {

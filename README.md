@@ -11,20 +11,20 @@ This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It 
 | Plugin | Id | Version | What it is |
 |---|---|---|---|
 | Grok Bot (listed) | `glorics.grok-bot` | 1.12.3 | Bar face. Launch or focus the Linux AppImage. Status. Optional pinned Cursor CDN update. |
-| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.4 | All of that, plus the inbox: your real bots on the bar with the same faces as in the app, last message, unread bubbles, waiting-on-you. |
+| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.5 | All of that, plus the inbox: your real bots on the bar with the same faces as in the app, last message, unread bubbles, waiting-on-you. |
 
-0.3.4 is the listing snapshot. The bar cluster shows the hub plus up to eight bot faces. Refresh reads Grok Bot's own version. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
+0.3.4 is the listing snapshot. 0.3.6 keeps a live window of the last messages (not the full history) and scrolls them in the open panel as Grok Bot writes them. The bar cluster shows the hub plus up to eight bot faces. Refresh reads Grok Bot's own version. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
 
 ## What it does
 
 - Hub face on the bar, plus a face for each of your bots
 - Those faces use the **same shape and color as in Grok Bot** (custom face if you set one; otherwise Grok Bot's own default from the bot id)
 - A small count bubble when a bot has unread messages
-- Inbox panel: name, last preview, relative time, unread
+- Inbox panel: name, last preview, unread, and a live chat window of the last few messages. Open the panel and it follows Grok Bot in near-real time (file watch, ~100ms). New lines appear at the bottom and older ones move up. It does not sync the full history.
 - Click a row to open or focus the Grok Bot Linux client
 - Status of the client window, optional pinned Cursor CDN AppImage update
 
-It does not read tokens, cookies, `sand-secrets.json`, or transcript blobs. It only reads the official client's last-roster file under `~/.config/Grok Bot/sand-client-persistence` (names, last-message preview, unread, waiting-on-you, avatar shape and color).
+It does not read tokens, cookies, or `sand-secrets.json`. It reads the official client's last-roster file under `~/.config/Grok Bot/sand-client-persistence` (names, unread, waiting-on-you, avatar shape and color) and, for those same bot ids only, the last `kind=message` line of each matching `transcript.replicas.<id>` file (clipped to 140 characters, plus a streaming/working flag). It does not dump the rest of the replica.
 
 ## How to demo it
 

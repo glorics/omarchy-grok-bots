@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Message path: last-line preview, waiting, unread, clip, skip stubs, no transcripts."""
+"""Message path: last-line preview, waiting, live replica line, clip, skip stubs."""
 
 from __future__ import annotations
 
@@ -71,8 +71,38 @@ def main() -> int:
                 ),
             ],
         )
-        # A transcript blob must be ignored (size would fail if opened as roster).
+        # Unrelated transcript junk must be ignored as roster.
         (persist / blob_name(KEY.replace("last-roster", "transcript.replicas.dead"))).write_bytes(b"x" * 80_000)
+        # Matching replica: last message wins over last-roster, streaming sets busy.
+        replica_key = KEY.replace(
+            "roster.last-roster",
+            "transcript.replicas.284a1d46-bc72-49fb-9c3b-c14f8b5bef80",
+        )
+        (persist / blob_name(replica_key)).write_text(
+            json.dumps(
+                {
+                    "schemaVersion": 3,
+                    "value": {
+                        "entries": [
+                            {"kind": "send-message", "id": "s1"},
+                            {
+                                "kind": "message",
+                                "role": "assistant",
+                                "content": "Old replica line",
+                                "isStreaming": False,
+                            },
+                            {
+                                "kind": "message",
+                                "role": "assistant",
+                                "content": "Live: opening LinkedIn now",
+                                "isStreaming": True,
+                            },
+                        ]
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
 
         data = run_inbox(persist)
         assert data["ok"] is True, data
@@ -81,7 +111,12 @@ def main() -> int:
         assert names.count("New Bot") == 1, names
         by = {b["name"]: b for b in data["bots"]}
 
-        assert by["Angela"]["preview"] == "LinkedIn s'ouvre. Vérifie Cloudflare."
+        assert by["Angela"]["preview"] == "Live: opening LinkedIn now"
+        assert "Old replica line" in by["Angela"]["feed"]
+        assert by["Angela"]["messages"][-1]["text"] == "Live: opening LinkedIn now"
+        assert by["Angela"]["messages"][-1]["streaming"] is True
+        assert by["Angela"]["busy"] is True
+        assert by["Angela"]["activity"] == "Working"
         assert by["Angela"]["team"] == "Dentalog AI LinkedIn"
         assert by["Angela"]["shape"] == "tablet"
         assert by["Angela"]["color"].upper() == "#FF263C"
@@ -98,7 +133,7 @@ def main() -> int:
         assert len(by["Clipped"]["preview"]) <= 140
         assert by["Clipped"]["preview"].startswith("A")
 
-        print("messages ok · preview, waiting, avatars, clip, hidden stub skipped, transcript ignored")
+        print("messages ok · preview, waiting, live replica, avatars, clip, hidden stub skipped")
 
     # Live roster on this machine, if present.
     live = json.loads(subprocess.check_output(["python3", str(ROOT / "inbox.py")]))
