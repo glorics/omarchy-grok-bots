@@ -11,9 +11,9 @@ This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It 
 | Plugin | Id | Version | What it is |
 |---|---|---|---|
 | Grok Bot (listed) | `glorics.grok-bot` | 1.12.3 | Bar face. Launch or focus the Linux AppImage. Status. Optional pinned Cursor CDN update. |
-| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.5 | All of that, plus the inbox: your real bots on the bar with the same faces as in the app, last message, unread bubbles, waiting-on-you. |
+| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.8 | All of that, plus the inbox: your real bots on the bar with the same faces as in the app, last message, unread bubbles, waiting-on-you. |
 
-0.3.4 is the listing snapshot. 0.3.6 keeps a live window of the last messages (not the full history) and scrolls them in the open panel as Grok Bot writes them. The bar cluster shows the hub plus up to eight bot faces. Refresh reads Grok Bot's own version. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
+0.3.4 is the listing snapshot. 0.3.8 keeps a live window of the last messages (not the full history) and scrolls them in the open panel as Grok Bot writes them. Click a bot face or a roster row to see that bot's messages. Double-click to open the Linux client. Click the gray hub to open the inbox. Working, waiting-on-you, and quiet bots have distinct bar and row states. The bar cluster shows the hub plus up to eight bot faces. Refresh reads Grok Bot's own version. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
 
 ## What it does
 
@@ -21,7 +21,7 @@ This plugin is **not** Grok Bot, and it is **not** an xAI or Cursor product. It 
 - Those faces use the **same shape and color as in Grok Bot** (custom face if you set one; otherwise Grok Bot's own default from the bot id)
 - A small count bubble when a bot has unread messages
 - Inbox panel: name, last preview, unread, and a live chat window of the last few messages. Open the panel and it follows Grok Bot in near-real time (file watch, ~100ms). New lines appear at the bottom and older ones move up. It does not sync the full history.
-- Click a row to open or focus the Grok Bot Linux client
+- Click a bot face or a roster row to see that bot's last messages in the panel. Double-click a face or a row to open or focus the Grok Bot Linux client. Click the gray hub to open the inbox.
 - Status of the client window, optional pinned Cursor CDN AppImage update
 
 It does not read tokens, cookies, or `sand-secrets.json`. It reads the official client's last-roster file under `~/.config/Grok Bot/sand-client-persistence` (names, unread, waiting-on-you, avatar shape and color) and, for those same bot ids only, the last `kind=message` line of each matching `transcript.replicas.<id>` file (clipped to 140 characters, plus a streaming/working flag). It does not dump the rest of the replica.
@@ -30,8 +30,8 @@ It does not read tokens, cookies, or `sand-secrets.json`. It reads the official 
 
 1. Install and enable the plugin (below). Keep Grok Bot itself installed.
 2. Open the Grok Bot Linux app and sign in. You should see your real bots (for example Angela, Laszlo, New Bot).
-3. Click the Grok cluster on the Omarchy bar. The panel lists those same bots. The yellow cloud, red tablet, and red triangle on the bar are the same faces as in the Grok Bot sidebar.
-4. Click a row. The Grok Bot window opens or focuses.
+3. Click the gray Grok hub on the Omarchy bar. The panel lists those same bots. The yellow cloud, red tablet, and red triangle on the bar are the same faces as in the Grok Bot sidebar.
+4. Click a bot face on the bar, or a row in the panel. That bot's messages fill the live window. Double-click to open or focus the Grok Bot app.
 5. In Grok Bot, change a bot's shape or color. Within a few seconds the bar face follows, because the widget re-reads the roster file when it changes.
 6. When a bot has unread messages, a small bubble with the number sits on that face and on the inbox row.
 

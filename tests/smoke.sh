@@ -119,6 +119,34 @@ if ! grep -q 'out.length >= 8' "$root/Inbox.qml"; then
   echo "Inbox.qml must allow more than three faces on the bar" >&2
   exit 1
 fi
+if ! grep -q 'handleBotClick(modelData' "$root/Panel.qml"; then
+  echo "bar faces must open that bot's messages" >&2
+  exit 1
+fi
+if ! grep -q 'function focusBot' "$root/Inbox.qml"; then
+  echo "Inbox.qml must keep a focused bot chat" >&2
+  exit 1
+fi
+if ! grep -q 'clickCount' "$root/Panel.qml"; then
+  echo "double-click must open the Linux client" >&2
+  exit 1
+fi
+if ! grep -q 'modelData.busy' "$root/Panel.qml"; then
+  echo "bar faces must bounce while working" >&2
+  exit 1
+fi
+if ! grep -q 'Waiting ·' "$root/Panel.qml"; then
+  echo "inbox rows must label waiting-on-you" >&2
+  exit 1
+fi
+if ! grep -q 'property bool pip' "$root/CountBubble.qml"; then
+  echo "CountBubble must mark waiting-on-you with a pip" >&2
+  exit 1
+fi
+if ! grep -q 'kind === "shield"' "$root/BotFace.qml"; then
+  echo "BotFace must draw the remaining Grok Bot shapes" >&2
+  exit 1
+fi
 
 
 

@@ -10,15 +10,32 @@ Item {
   property color ink: "#000000"
   property string fontFamily: Style.font.family
   property bool tail: true
+  property bool pip: false
 
-  visible: count > 0
-  implicitWidth: Math.max(Style.space(14), pill.implicitWidth)
-  implicitHeight: pill.implicitHeight + (tail ? Style.space(3) : 0)
+  readonly property bool showCount: count > 0
+  readonly property bool showPip: pip && count <= 0
+
+  visible: showCount || showPip
+  implicitWidth: showCount ? Math.max(Style.space(14), pill.implicitWidth) : Style.space(8)
+  implicitHeight: showCount ? (pill.implicitHeight + (tail ? Style.space(3) : 0)) : Style.space(8)
   width: implicitWidth
   height: implicitHeight
 
   Rectangle {
+    id: pipDot
+    visible: root.showPip
+    width: Style.space(7)
+    height: Style.space(7)
+    radius: width / 2
+    color: root.fill
+    border.width: 1
+    border.color: Qt.rgba(0, 0, 0, 0.28)
+    anchors.centerIn: parent
+  }
+
+  Rectangle {
     id: pill
+    visible: root.showCount
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     implicitWidth: label.implicitWidth + Style.space(8)
@@ -41,7 +58,7 @@ Item {
   }
 
   Rectangle {
-    visible: root.tail
+    visible: root.tail && root.showCount
     width: Style.space(5)
     height: Style.space(5)
     rotation: 45

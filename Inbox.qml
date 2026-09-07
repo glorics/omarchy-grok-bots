@@ -27,6 +27,8 @@ Item {
   property alias chatModel: chatList
   property bool live: false
   property bool _pending: false
+  property string focusedId: ""
+  property string focusedName: ""
 
   readonly property int maxInboxBytes: 65536
   readonly property int maxBots: 24
@@ -211,6 +213,49 @@ Item {
     return out
   }
 
+  function botById(id) {
+    id = String(id || "")
+    if (id === "")
+      return null
+    for (var i = 0; i < root.bots.length; i++) {
+      if (String(root.bots[i].id) === id)
+        return root.bots[i]
+    }
+    return null
+  }
+
+  function pickChatBot() {
+    var focused = root.botById(root.focusedId)
+    if (focused)
+      return focused
+    var liveBot = null
+    for (var i = 0; i < root.bots.length; i++) {
+      if (root.bots[i].busy) { liveBot = root.bots[i]; break }
+    }
+    if (!liveBot) {
+      for (var j = 0; j < root.bots.length; j++) {
+        if (root.bots[j].waiting) { liveBot = root.bots[j]; break }
+      }
+    }
+    if (!liveBot) {
+      for (var u = 0; u < root.bots.length; u++) {
+        if (Number(root.bots[u].unread || 0) > 0) { liveBot = root.bots[u]; break }
+      }
+    }
+    if (!liveBot && root.bots.length > 0)
+      liveBot = root.bots[0]
+    return liveBot
+  }
+
+  function focusBot(bot) {
+    if (!bot || !bot.id)
+      return
+    root.focusedId = String(bot.id)
+    root.focusedName = String(bot.name || "Bot")
+    root.syncChat(bot)
+    root.stamp = root.stamp + 1
+  }
+
   function syncChat(bot) {
     var msgs = (bot && bot.messages) ? bot.messages : []
     var name = bot && bot.name ? bot.name : ""
@@ -274,17 +319,16 @@ Item {
       root.bots = root.sanitizeBots(data.bots)
       root.syncModel(root.bots)
       root.stamp = root.stamp + 1
-      var liveBot = null
-      for (var i = 0; i < root.bots.length; i++) {
-        if (root.bots[i].busy) { liveBot = root.bots[i]; break }
+      var liveBot = root.pickChatBot()
+      if (root.focusedId !== "" && !root.botById(root.focusedId))
+        root.focusedId = liveBot ? String(liveBot.id || "") : ""
+      if (liveBot) {
+        if (root.focusedId === "")
+          root.focusedId = String(liveBot.id || "")
+        root.focusedName = String(liveBot.name || "Bot")
+      } else {
+        root.focusedName = ""
       }
-      if (!liveBot) {
-        for (var j = 0; j < root.bots.length; j++) {
-          if (root.bots[j].waiting) { liveBot = root.bots[j]; break }
-        }
-      }
-      if (!liveBot && root.bots.length > 0)
-        liveBot = root.bots[0]
       root.syncChat(liveBot)
       root.demo = fromDemo === true || data.demo === true
       root.hasSnapshot = true

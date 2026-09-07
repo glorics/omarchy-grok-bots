@@ -30,6 +30,8 @@ Item {
     NumberAnimation { to: -1.0; duration: 420; easing.type: Easing.InOutSine }
   }
 
+  onLivelyChanged: if (!lively) bob = 0
+
   Shape {
     id: body
     anchors.centerIn: parent
@@ -68,20 +70,24 @@ Item {
       return circlePath()
     if (kind === "tablet")
       return tabletPath()
-    if (kind === "capsule" || kind === "pill")
+    if (kind === "capsule" || kind === "pill" || kind === "cylinder")
       return capsulePath()
     if (kind === "wedge")
       return polygonPath(3, -Math.PI / 2)
-    if (kind === "hex" || kind === "hexagon")
+    if (kind === "hex" || kind === "hexagon" || kind === "gem" || kind === "crystal")
       return polygonPath(6, Math.PI / 6)
     if (kind === "pentagon")
       return polygonPath(5, -Math.PI / 2)
-    if (kind === "pebble")
+    if (kind === "pebble" || kind === "bean")
       return pebblePath()
     if (kind === "cloud")
       return cloudPath()
-    if (kind === "teardrop")
+    if (kind === "teardrop" || kind === "leaf")
       return teardropPath()
+    if (kind === "shield")
+      return shieldPath()
+    if (kind === "dome" || kind === "arch")
+      return domePath()
     if (kind === "egg")
       return eggPath()
     if (kind === "blob")
@@ -154,6 +160,26 @@ Item {
       + " C" + (s * -0.04) + " " + (s * 0.86) + " " + (s * 0.00) + " " + (s * 0.48) + " " + (s * 0.22) + " " + (s * 0.48)
       + " C" + (s * 0.20) + " " + (s * 0.10) + " " + (s * 0.72) + " " + (s * 0.06) + " " + (s * 0.76) + " " + (s * 0.42)
       + " C" + (s * 1.04) + " " + (s * 0.40) + " " + (s * 1.04) + " " + (s * 0.86) + " " + (s * 0.78) + " " + (s * 0.86)
+      + " Z"
+  }
+
+  function shieldPath() {
+    var s = root.s
+    return "M" + (s * 0.50) + " " + (s * 0.04)
+      + " L" + (s * 0.88) + " " + (s * 0.20)
+      + " L" + (s * 0.88) + " " + (s * 0.52)
+      + " C" + (s * 0.88) + " " + (s * 0.78) + " " + (s * 0.68) + " " + (s * 0.94) + " " + (s * 0.50) + " " + (s * 0.98)
+      + " C" + (s * 0.32) + " " + (s * 0.94) + " " + (s * 0.12) + " " + (s * 0.78) + " " + (s * 0.12) + " " + (s * 0.52)
+      + " L" + (s * 0.12) + " " + (s * 0.20)
+      + " Z"
+  }
+
+  function domePath() {
+    var s = root.s
+    return "M" + (s * 0.12) + " " + (s * 0.92)
+      + " L" + (s * 0.12) + " " + (s * 0.52)
+      + " A" + (s * 0.38) + " " + (s * 0.38) + " 0 0 1 " + (s * 0.88) + " " + (s * 0.52)
+      + " L" + (s * 0.88) + " " + (s * 0.92)
       + " Z"
   }
 

@@ -98,6 +98,36 @@ Panel {
     selectedAction.run()
   }
 
+  function indexOfBot(bot) {
+    if (!bot || !bot.id)
+      return -1
+    var id = String(bot.id)
+    for (var i = 0; i < inbox.bots.length; i++) {
+      if (String(inbox.bots[i].id) === id)
+        return i
+    }
+    return -1
+  }
+
+  function showBot(bot) {
+    if (!bot)
+      return
+    inbox.focusBot(bot)
+    var idx = root.indexOfBot(bot)
+    if (idx >= 0) {
+      root.selectedBot = idx
+      root.cursorActive = true
+    }
+    if (!root.opened)
+      root.open()
+  }
+
+  function handleBotClick(bot, clickCount) {
+    root.showBot(bot)
+    if (Number(clickCount || 1) >= 2)
+      root.openBot(bot)
+  }
+
   function phraseList() {
     if (grok.running) return livePhrases
     if (grok.installed && !grok.crashed) return idlePhrases
@@ -131,7 +161,7 @@ Panel {
   function triggerPress(button) {
     if (button === Qt.RightButton) grok.launch()
     else if (button === Qt.MiddleButton) grok.checkForUpdates()
-    else openTimer.restart()
+    else hubClick.restart()
   }
 
   implicitWidth: button.implicitWidth
@@ -144,7 +174,21 @@ Panel {
     cursorActive = false
     actionIndex = 0
     phraseIndex = 0
-    selectedBot = 0
+    var idx = -1
+    if (inbox.focusedId) {
+      for (var i = 0; i < inbox.bots.length; i++) {
+        if (String(inbox.bots[i].id) === String(inbox.focusedId)) {
+          idx = i
+          break
+        }
+      }
+    }
+    if (idx >= 0) {
+      selectedBot = idx
+      cursorActive = true
+    } else {
+      selectedBot = 0
+    }
     if (panelFlick) panelFlick.contentY = 0
     grok.refresh(false)
     inbox.refresh()
@@ -186,8 +230,8 @@ Panel {
   }
 
   Timer {
-    id: openTimer
-    interval: 40
+    id: hubClick
+    interval: 260
     repeat: false
     onTriggered: root.toggle()
   }
@@ -200,7 +244,7 @@ Panel {
     hasVisualContent: true
     pressable: true
     interactive: true
-    tooltipText: "Grok Bot"
+    tooltipText: "Click a face for messages · double-click to open Grok Bot"
     active: grok.alarming || inbox.unreadBots > 0
     fixedWidth: Math.max(Style.bar.iconSlot, cluster.implicitWidth + Style.space(10))
     onPressed: function(buttonCode) { root.triggerPress(buttonCode) }
@@ -236,6 +280,22 @@ Panel {
           anchors.verticalCenter: parent.verticalCenter
           anchors.rightMargin: -Style.space(5)
         }
+
+        MouseArea {
+          anchors.fill: parent
+          acceptedButtons: Qt.LeftButton
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: function(mouse) {
+            if (mouse.clickCount >= 2) {
+              hubClick.stop()
+              grok.launch()
+              root.close()
+            } else {
+              hubClick.restart()
+            }
+          }
+        }
       }
 
       Repeater {
@@ -252,12 +312,13 @@ Panel {
             iconSize: Style.space(16)
             color: modelData.color
             shape: modelData.shape
-            lively: modelData.waiting || Number(modelData.unread || 0) > 0
+            lively: modelData.waiting || modelData.busy || Number(modelData.unread || 0) > 0
             holeColor: root.holeColor
           }
 
           CountBubble {
             count: Number(modelData.unread || 0)
+            pip: modelData.waiting === true
             fill: "#ffffff"
             ink: "#000000"
             tail: false
@@ -265,6 +326,14 @@ Panel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             anchors.rightMargin: -Style.space(4)
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: function(mouse) { root.handleBotClick(modelData, mouse.clickCount) }
           }
         }
       }
@@ -301,6 +370,7 @@ Panel {
           if (inbox.bots.length > 0) {
             var n = inbox.bots.length
             root.selectedBot = ((root.selectedBot + dy) % n + n) % n
+            root.showBot(inbox.bots[root.selectedBot])
           } else {
             root.selectAction(root.actionIndex + dy)
           }
@@ -421,6 +491,17 @@ Panel {
             font.pixelSize: Style.font.bodySmall
           }
 
+          Text {
+            visible: inbox.focusedName !== "" && inbox.chatModel.count > 0
+            textFormat: Text.PlainText
+            width: parent.width
+            text: String(inbox.focusedName || "").toUpperCase() + " · messages"
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.letterSpacing: 0.6
+          }
+
           ListView {
             id: liveChat
             width: parent.width
@@ -431,6 +512,11 @@ Panel {
             boundsBehavior: Flickable.StopAtBounds
             model: inbox.chatModel
             onCountChanged: Qt.callLater(function() { liveChat.positionViewAtEnd() })
+
+            Connections {
+              target: inbox
+              function onStampChanged() { Qt.callLater(function() { liveChat.positionViewAtEnd() }) }
+            }
 
             displaced: Transition {
               NumberAnimation { property: "y"; duration: 160; easing.type: Easing.OutQuad }
@@ -499,6 +585,7 @@ Panel {
               Item {
                 id: row
                 required property int index
+                required property string id
                 required property string name
                 required property string team
                 required property string preview
@@ -516,20 +603,22 @@ Panel {
                 Rectangle {
                   anchors.fill: parent
                   radius: Style.cornerRadius
-                  color: row.index === 0 || (root.cursorActive && root.selectedBot === row.index)
+                  color: (inbox.focusedId !== "" && String(inbox.focusedId) === String(row.id))
+                    || (root.cursorActive && root.selectedBot === row.index)
                     ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08)
                     : "transparent"
                 }
 
                 MouseArea {
                   anchors.fill: parent
+                  acceptedButtons: Qt.LeftButton
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: {
                     root.cursorActive = true
                     root.selectedBot = row.index
                   }
-                  onClicked: root.openBot(inbox.bots[row.index])
+                  onClicked: function(mouse) { root.handleBotClick(inbox.bots[row.index], mouse.clickCount) }
                 }
 
                 RowLayout {
@@ -590,6 +679,8 @@ Panel {
                         var line = String(row.preview || "No messages yet")
                         if (row.busy)
                           return "Working · " + line
+                        if (row.waiting)
+                          return "Waiting · " + line
                         return line
                       }
                       color: (row.waiting || row.busy) ? root.foreground : root.dim
