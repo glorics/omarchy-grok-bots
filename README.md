@@ -72,7 +72,7 @@ There is no fake roster on the bar.
 | Plugin | Id | Version | What it is |
 |---|---|---|---|
 | Grok Bot (listed) | `glorics.grok-bot` | 1.12.3 | One bar face. Launch or focus the Linux AppImage. Status. Optional pinned Cursor CDN update. |
-| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.13 | All of that, plus the tray and the live trail. |
+| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.14 | All of that, plus the tray and the live trail. |
 
 0.3.8 is the first listed snapshot. The panel **Plugin** row is this version, from `manifest.json`. **Grok Bot** is the Linux client's version (AppImage name / the client's own files). **Latest** is the Linux AppImage this snapshot can install, not the newer macOS Cursor feed. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
 

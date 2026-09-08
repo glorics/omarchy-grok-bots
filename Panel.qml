@@ -339,7 +339,7 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(480) + Style.space(12))
+    contentWidth: panel.fittedContentWidth(Style.space(480) + Style.space(12) + Style.space(8))
     contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(640))
     gap: Style.gapsOut
 
@@ -394,7 +394,7 @@ Panel {
 
         Column {
           id: column
-          width: panelFlick.width - Style.space(12)
+          width: panelFlick.width - Style.space(12) - Style.space(8)
           spacing: Style.space(12)
 
           PanelHero {
