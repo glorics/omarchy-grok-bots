@@ -28,7 +28,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-PLUGIN_REPO = os.environ.get("GROKBOT_PLUGIN_REPO", "glorics/omarchy-grok-bot")
+PLUGIN_REPO = os.environ.get("GROKBOT_PLUGIN_REPO", "glorics/omarchy-grok-bots")
 HOME = Path.home()
 STATE_DIR = Path(os.environ.get("GROKBOT_STATE", str(HOME / ".grokbot")))
 STATE_FILE = STATE_DIR / "installed"

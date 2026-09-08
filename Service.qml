@@ -26,7 +26,7 @@ Item {
   property string appImage: ""
   property string launchCommand: ""
   property string focusPattern: "grok-bot"
-  property string githubUrl: "https://github.com/glorics/omarchy-grok-bot"
+  property string githubUrl: "https://github.com/glorics/omarchy-grok-bots"
   property string releasesUrl: "https://x.ai/bot"
   property string productUrl: "https://x.ai/bot"
   property string computerLabel: "Always on"
