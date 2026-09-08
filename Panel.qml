@@ -339,7 +339,7 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(480))
+    contentWidth: panel.fittedContentWidth(Style.space(480) + Style.space(12))
     contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(640))
     gap: Style.gapsOut
 
@@ -378,11 +378,23 @@ Panel {
         boundsBehavior: Flickable.StopAtBounds
         flickableDirection: Flickable.VerticalFlick
         interactive: contentHeight > height
-        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+        ScrollBar.vertical: ScrollBar {
+          id: vScroll
+          policy: ScrollBar.AsNeeded
+          implicitWidth: Style.space(12)
+          padding: Style.space(3)
+          contentItem: Rectangle {
+            implicitWidth: Style.space(5)
+            radius: width / 2
+            color: root.foreground
+            opacity: vScroll.pressed ? 0.55 : (vScroll.hovered ? 0.38 : 0.22)
+          }
+          background: Item {}
+        }
 
         Column {
           id: column
-          width: panelFlick.width
+          width: panelFlick.width - Style.space(12)
           spacing: Style.space(12)
 
           PanelHero {
