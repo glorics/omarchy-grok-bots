@@ -18,6 +18,7 @@ Item {
   property string source: "none"
   property string sourceLabel: "Checking…"
   property string statusText: "Checking…"
+  property string pluginVersion: ""
   property string appVersion: ""
   property string installedVersion: ""
   property string latestVersion: ""
@@ -114,6 +115,7 @@ Item {
     source = clip(data.source || "none", 24)
     sourceLabel = clip(data.sourceLabel || "", 64)
     statusText = clip(data.statusText || "", 64)
+    pluginVersion = clip(data.pluginVersion || "", 32)
     appVersion = clip(data.appVersion || "", 32)
     installedVersion = clip(data.installedVersion || "", 32)
     latestVersion = clip(data.latestVersion || "", 32)

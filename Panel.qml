@@ -740,8 +740,13 @@ Panel {
             InfoPair { label: "Computer"; value: grok.computerLabel }
             InfoPair { label: "Signed in"; value: grok.signedInLabel }
             InfoPair {
+              visible: grok.pluginVersion !== ""
+              label: "Plugin"
+              value: grok.pluginVersion
+            }
+            InfoPair {
               visible: grok.appVersion !== "" || grok.installedVersion !== ""
-              label: "Version"
+              label: "Grok Bot"
               value: grok.appVersion || grok.installedVersion
             }
             InfoPair {

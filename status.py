@@ -422,6 +422,23 @@ def sentry_app_version() -> str:
     return strip_v(str(app.get("app_version") or ""))
 
 
+def plugin_version() -> str:
+    """This plugin's version from its own manifest.json, not Grok Bot's."""
+    data = read_json(Path(__file__).resolve().parent / "manifest.json")
+    return strip_v(str(data.get("version") or ""))
+
+
+def appimage_version() -> str:
+    """Version encoded in the current AppImage filename, if any."""
+    path = APPIMAGE
+    try:
+        path = path.resolve()
+    except OSError:
+        return ""
+    match = VERSION_RE.search(path.name)
+    return match.group(1) if match else ""
+
+
 def strip_v(value: str) -> str:
     text = str(value or "").strip()
     if text.lower().startswith("v") and len(text) > 1 and text[1].isdigit():
@@ -806,8 +823,14 @@ def status() -> dict:
     window = hypr_window()
     launcher = which_grok_bot()
     pkg = package_version()
-    installed_version = strip_v(state.get("tag") or "")
-    app_version = strip_v(str(marker.get("appVersion") or "")) or sentry_app_version()
+    plug_version = plugin_version()
+    image_version = appimage_version()
+    installed_version = strip_v(state.get("tag") or "") or image_version
+    app_version = (
+        strip_v(str(marker.get("appVersion") or ""))
+        or sentry_app_version()
+        or image_version
+    )
     download_url = state.get("url") or OFFICIAL_APPIMAGE_URL
     state_source = state.get("source") or ""
     latest = strip_v(str(cache.get("tag") or ""))
@@ -898,6 +921,7 @@ def status() -> dict:
         "pid": pid if running else 0,
         "windowClass": window.get("class") or focus,
         "windowTitle": clip(window.get("title") or "", 80),
+        "pluginVersion": clip(plug_version, 32),
         "installedVersion": clip(installed_version or pkg, 32),
         "appVersion": clip(version, 32),
         "latestVersion": clip(display_latest, 32),

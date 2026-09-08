@@ -4,12 +4,12 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 bash "$root/bin/run-capped" python3 "$root/status.py" | python3 -c '
 import json, sys
 data = json.load(sys.stdin)
-for key in ("ok", "installed", "source", "statusText", "productUrl", "signedIn", "computerLabel"):
+for key in ("ok", "installed", "source", "statusText", "productUrl", "signedIn", "computerLabel", "pluginVersion"):
     assert key in data, key
 assert data.get("source") in ("official", "package", "path", "none"), data.get("source")
-print("status.py ok · installed=%s source=%s status=%s version=%s update=%s" % (
-    data.get("installed"), data.get("source"), data.get("statusText"), data.get("appVersion"),
-    data.get("updateAvailable")))
+print("status.py ok · installed=%s source=%s status=%s plugin=%s grok=%s update=%s" % (
+    data.get("installed"), data.get("source"), data.get("statusText"), data.get("pluginVersion"),
+    data.get("appVersion"), data.get("updateAvailable")))
 assert data.get("updateAvailable") in (True, False)
 '
 got=$(python3 -c 'print("A"*300000)' | wc -c)
@@ -111,6 +111,23 @@ print("inbox.py ok · bots=%d source=%s" % (len(bots), "yes" if data.get("source
 '
 python3 "$root/tests/unread.py"
 python3 "$root/tests/messages.py"
+python3 - "$root" <<'PY'
+import json, subprocess, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+manifest = json.loads((root / "manifest.json").read_text())
+status = json.loads(subprocess.check_output(["python3", str(root / "status.py")], text=True))
+assert status.get("pluginVersion") == manifest["version"], status.get("pluginVersion")
+print("plugin version ok ·", manifest["version"])
+PY
+if ! grep -q 'label: "Plugin"' "$root/Panel.qml"; then
+  echo "Panel.qml must show the plugin version from manifest.json" >&2
+  exit 1
+fi
+if ! grep -q 'label: "Grok Bot"' "$root/Panel.qml"; then
+  echo "Panel.qml must label the client version as Grok Bot" >&2
+  exit 1
+fi
 if ! grep -q 'CountBubble' "$root/Panel.qml"; then
   echo "Panel.qml must use CountBubble on the bar" >&2
   exit 1
