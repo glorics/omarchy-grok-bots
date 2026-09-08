@@ -610,17 +610,11 @@ def fetch_latest() -> dict:
     prev = read_json(LATEST_CACHE)
     last_notified = strip_v(str(prev.get("lastNotified") or ""))
     installed = strip_v(read_kv(STATE_FILE).get("tag") or "")
-    if latest and installed and version_newer(latest, installed) and latest != last_notified:
-        if linux:
-            notify(
-                f"Grok Bot {latest} is out",
-                "Linux AppImage is on the Cursor CDN. Open the bar plugin to update.",
-            )
-        else:
-            notify(
-                f"Grok Bot {latest} is out",
-                "A newer desktop build exists. No Linux AppImage on the CDN yet.",
-            )
+    if latest and linux and installed and version_newer(latest, installed) and latest != last_notified:
+        notify(
+            f"Grok Bot {latest} is out",
+            "Linux AppImage is on the Cursor CDN. Open the bar plugin to update.",
+        )
         last_notified = latest
     data = {
         "tag": latest,
@@ -903,13 +897,16 @@ def status() -> dict:
         status_text = "Window closed"
 
     signed_in = any(path.exists() for path in SESSION_HINTS)
-    # Darwin/desktop can be newer than Linux. Only flag an update when this
-    # snapshot pins a Linux AppImage we can actually install.
+    # Cursor's Darwin feed can be ahead of Linux. Latest on this panel is the
+    # Linux AppImage this snapshot can actually install, not the Mac tag.
     linux_ready = bool(latest and pinned_artifact(latest) and linux_latest)
-    newer_known = bool(latest and version and version_newer(latest, version))
-    update_available = bool(linux_ready and newer_known)
+    linux_latest_version = latest if linux_ready else version
+    newer_known = bool(
+        linux_ready and version and version_newer(linux_latest_version, version)
+    )
+    update_available = newer_known
     can_update = update_available
-    display_latest = latest or version
+    display_latest = linux_latest_version or version
 
     return {
         "ok": True,

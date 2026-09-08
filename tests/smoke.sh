@@ -11,6 +11,11 @@ print("status.py ok · installed=%s source=%s status=%s plugin=%s grok=%s update
     data.get("installed"), data.get("source"), data.get("statusText"), data.get("pluginVersion"),
     data.get("appVersion"), data.get("updateAvailable")))
 assert data.get("updateAvailable") in (True, False)
+assert data.get("newerKnown") == data.get("updateAvailable")
+if not data.get("updateAvailable"):
+    latest = data.get("latestVersion") or ""
+    current = data.get("appVersion") or data.get("installedVersion") or ""
+    assert latest in ("", current), (latest, current)
 '
 got=$(python3 -c 'print("A"*300000)' | wc -c)
 capped=$(set +o pipefail; GLORICS_MAX_BYTES=65536 bash "$root/bin/run-capped" python3 -c 'print("A"*300000)' 2>/dev/null | wc -c)

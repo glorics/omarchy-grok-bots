@@ -752,7 +752,7 @@ Panel {
             InfoPair {
               visible: grok.latestVersion !== ""
               label: "Latest"
-              value: grok.latestVersion + ((grok.updateAvailable || grok.newerKnown) ? " · newer" : " · current")
+              value: grok.latestVersion + (grok.updateAvailable ? " · newer" : " · current")
             }
             InfoPair {
               visible: grok.lastCheckText !== ""
