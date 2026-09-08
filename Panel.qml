@@ -235,7 +235,7 @@ Panel {
     hasVisualContent: true
     pressable: true
     interactive: true
-    tooltipText: "Click a face for messages · Open Grok Bot in the panel"
+    tooltipText: "Click a face for messages · Enter opens Grok Bot"
     active: grok.alarming || inbox.unreadBots > 0
     fixedWidth: Math.max(Style.bar.iconSlot, cluster.implicitWidth + Style.space(10))
     onPressed: function(buttonCode) { root.triggerPress(buttonCode) }
