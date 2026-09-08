@@ -149,8 +149,12 @@ if ! grep -q 'function focusBot' "$root/Inbox.qml"; then
   echo "Inbox.qml must keep a focused bot chat" >&2
   exit 1
 fi
-if ! grep -q 'clickCount' "$root/Panel.qml"; then
-  echo "double-click must open the Linux client" >&2
+if ! grep -q 'Open Grok Bot' "$root/Panel.qml"; then
+  echo "panel must open the Linux client with Open Grok Bot" >&2
+  exit 1
+fi
+if grep -q 'double-click' "$root/README.md" "$root/Panel.qml"; then
+  echo "do not advertise double-click to open the client" >&2
   exit 1
 fi
 if ! grep -q 'modelData.busy' "$root/Panel.qml"; then

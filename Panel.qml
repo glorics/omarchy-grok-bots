@@ -122,10 +122,8 @@ Panel {
       root.open()
   }
 
-  function handleBotClick(bot, clickCount) {
+  function handleBotClick(bot) {
     root.showBot(bot)
-    if (Number(clickCount || 1) >= 2)
-      root.openBot(bot)
   }
 
   function phraseList() {
@@ -161,7 +159,7 @@ Panel {
   function triggerPress(button) {
     if (button === Qt.RightButton) grok.launch()
     else if (button === Qt.MiddleButton) grok.checkForUpdates()
-    else hubClick.restart()
+    else root.toggle()
   }
 
   implicitWidth: button.implicitWidth
@@ -229,13 +227,6 @@ Panel {
     }
   }
 
-  Timer {
-    id: hubClick
-    interval: 260
-    repeat: false
-    onTriggered: root.toggle()
-  }
-
   WidgetButton {
     id: button
     anchors.fill: parent
@@ -244,7 +235,7 @@ Panel {
     hasVisualContent: true
     pressable: true
     interactive: true
-    tooltipText: "Click a face for messages · double-click to open Grok Bot"
+    tooltipText: "Click a face for messages · Open Grok Bot in the panel"
     active: grok.alarming || inbox.unreadBots > 0
     fixedWidth: Math.max(Style.bar.iconSlot, cluster.implicitWidth + Style.space(10))
     onPressed: function(buttonCode) { root.triggerPress(buttonCode) }
@@ -286,15 +277,7 @@ Panel {
           acceptedButtons: Qt.LeftButton
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
-          onClicked: function(mouse) {
-            if (mouse.clickCount >= 2) {
-              hubClick.stop()
-              grok.launch()
-              root.close()
-            } else {
-              hubClick.restart()
-            }
-          }
+          onClicked: function() { root.toggle() }
         }
       }
 
@@ -333,7 +316,7 @@ Panel {
             acceptedButtons: Qt.LeftButton
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: function(mouse) { root.handleBotClick(modelData, mouse.clickCount) }
+            onClicked: function() { root.handleBotClick(modelData) }
           }
         }
       }
@@ -618,7 +601,7 @@ Panel {
                     root.cursorActive = true
                     root.selectedBot = row.index
                   }
-                  onClicked: function(mouse) { root.handleBotClick(inbox.bots[row.index], mouse.clickCount) }
+                  onClicked: function() { root.handleBotClick(inbox.bots[row.index]) }
                 }
 
                 RowLayout {

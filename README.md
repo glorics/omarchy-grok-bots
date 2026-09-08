@@ -37,10 +37,10 @@ Clicks:
 | Click | What happens |
 |---|---|
 | A bot face (or an inbox row) | That bot's last messages fill the live trail in the panel |
-| Double-click a face or a row | Opens or focuses the Grok Bot Linux client |
 | The gray hub | Opens the inbox |
+| **Open Grok Bot** in the panel | Opens or focuses the Linux client |
 
-Right-click the slot launches the client. Middle-click checks for a pinned Cursor CDN update.
+Right-click the slot also launches the client. Middle-click checks for a pinned Cursor CDN update.
 
 ## The live trail
 
@@ -72,7 +72,7 @@ There is no fake roster on the bar.
 | Plugin | Id | Version | What it is |
 |---|---|---|---|
 | Grok Bot (listed) | `glorics.grok-bot` | 1.12.3 | One bar face. Launch or focus the Linux AppImage. Status. Optional pinned Cursor CDN update. |
-| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.11 | All of that, plus the tray and the live trail. |
+| **Grok Bots (this repo)** | `glorics.grok-bots` | 0.3.12 | All of that, plus the tray and the live trail. |
 
 0.3.8 is the first listed snapshot. The panel **Plugin** row is this version, from `manifest.json`. **Grok Bot** is the Linux client's version (AppImage name / the client's own files). **Latest** is the Linux AppImage this snapshot can install, not the newer macOS Cursor feed. The plugin only offers an AppImage install when a pinned Linux build is on the Cursor CDN.
 
@@ -81,7 +81,7 @@ There is no fake roster on the bar.
 1. Install and enable the plugin (below). Keep Grok Bot itself installed.
 2. Open the Grok Bot Linux app and sign in. You should see your real bots.
 3. Look at the Omarchy bar: hub plus those same faces, unread bubbles if anyone wrote.
-4. Click a face. The panel opens on that bot's trail. Double-click to jump into the Linux client.
+4. Click a face. The panel opens on that bot's trail. Use **Open Grok Bot** in the panel to jump into the Linux client.
 5. Leave the panel open. Send something in Grok Bot. The trail follows within a fraction of a second.
 6. Change a bot's shape or color in Grok Bot. The bar face follows, because the widget re-reads the roster file when it changes.
 
