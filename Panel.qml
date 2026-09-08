@@ -126,6 +126,12 @@ Panel {
     root.showBot(bot)
   }
 
+  function manualRefresh() {
+    grok.refresh(false)
+    inbox.refresh(true)
+    grok.flash("Refreshed")
+  }
+
   function phraseList() {
     if (grok.running) return livePhrases
     if (grok.installed && !grok.crashed) return idlePhrases
@@ -213,7 +219,7 @@ Panel {
     function show(): void { root.open() }
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }
-    function refresh(): string { grok.refresh(false); inbox.refresh(); return "ok" }
+    function refresh(): string { root.manualRefresh(); return "ok" }
     function launch(): string { grok.launch(); return "ok" }
     function update(): string { grok.updateNow(); return "ok" }
     function status(): string { return grok.statusText }
@@ -363,7 +369,7 @@ Panel {
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
-        if (t === "r" || t === "R") { grok.refresh(false); inbox.refresh() }
+        if (t === "r" || t === "R") root.manualRefresh()
         else if (t === "u") grok.checkForUpdates()
         else if (t === "U") grok.updateNow()
         else if (t === "g" || t === "G") { grok.openProduct(); root.close() }
@@ -421,7 +427,7 @@ Panel {
                 tooltipText: "Refresh (R)"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
-                onClicked: { grok.refresh(false); inbox.refresh() }
+                onClicked: root.manualRefresh()
               }
             }
           }

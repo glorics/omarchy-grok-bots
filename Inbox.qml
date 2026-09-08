@@ -368,8 +368,8 @@ Item {
     }
   }
 
-  function refresh() {
-    if (root.live && watchProc.running)
+  function refresh(force) {
+    if (root.live && watchProc.running && force !== true)
       return
     if (inboxProcess.running) {
       root._pending = true

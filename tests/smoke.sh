@@ -149,6 +149,14 @@ if ! grep -q 'function focusBot' "$root/Inbox.qml"; then
   echo "Inbox.qml must keep a focused bot chat" >&2
   exit 1
 fi
+if ! grep -q 'function manualRefresh' "$root/Panel.qml"; then
+  echo "Refresh must re-read inbox while the panel is open" >&2
+  exit 1
+fi
+if ! grep -q 'inbox.refresh(true)' "$root/Panel.qml"; then
+  echo "Refresh must force an inbox read" >&2
+  exit 1
+fi
 if ! grep -q 'Open Grok Bot' "$root/Panel.qml"; then
   echo "panel must open the Linux client with Open Grok Bot" >&2
   exit 1

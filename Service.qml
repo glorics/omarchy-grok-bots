@@ -98,6 +98,11 @@ Item {
     refresh(true)
   }
 
+  function flash(text) {
+    actionStatus = clip(text, 64)
+    actionStatusTimer.restart()
+  }
+
   function applyStatus(raw) {
     var data
     try {
