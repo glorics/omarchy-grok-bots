@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Commons
+import qs.Commons as Commons
 
 // Colored geometric bot face used in the bar cluster and roster rows.
 Item {
@@ -10,7 +11,7 @@ Item {
   property color color: "#e23d3d"
   property string shape: "square"
   property bool lively: false
-  property color holeColor: Color.background
+  property color holeColor: Commons.Color.background
 
   implicitWidth: iconSize
   implicitHeight: iconSize

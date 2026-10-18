@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 
 // Themed x.ai/bot IconMark face. Expression table, blink squash, and
 // per-state body motion follow the public site animation. Overlay morphs
@@ -10,7 +11,7 @@ Item {
   id: root
 
   property real iconSize: Style.font.icon
-  property color color: Color.foreground
+  property color color: Commons.Color.foreground
   property bool running: false
   property bool alarming: false
   property bool installed: true
@@ -38,7 +39,7 @@ Item {
   readonly property real s: width / 259
   readonly property real headC: 114.2705
   readonly property color bodyColor: root.color
-  readonly property color eyeColor: Color.background
+  readonly property color eyeColor: Commons.Color.background
 
   // Public face states. Stay is shorter than the site so the orb actually
   // shows the catalog instead of sitting on idle.

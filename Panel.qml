@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Panel {
@@ -30,13 +31,13 @@ Panel {
     "Computer's up"
   ]
 
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
-  readonly property color urgent: bar ? bar.urgent : Color.urgent
+  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
+  readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property color iconColor: grok.crashed || grok.updateAvailable ? urgent : foreground
   readonly property color barIconColor: grok.alarming ? (bar ? bar.urgent : urgent) : (bar ? bar.barForeground : foreground)
-  readonly property color holeColor: bar ? (bar.background || Color.bar.background) : Color.background
+  readonly property color holeColor: bar ? (bar.background || Commons.Color.bar.background) : Commons.Color.background
   readonly property int rowH: Style.space(72)
   readonly property var actions: buildActions()
   readonly property var selectedAction: actions.length > 0 ? actions[Math.max(0, Math.min(actionIndex, actions.length - 1))] : null
